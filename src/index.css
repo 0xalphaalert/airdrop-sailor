@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* This forces every page to use your font, smooths the text, and sets the default text color */
+  body {
+    @apply font-sans antialiased text-slate-900 bg-[#F8FAFC];
+  }
+  
+  /* This makes all headings instantly look tighter and more premium */
+  h1, h2, h3, h4, h5, h6 {
+    @apply tracking-tight;
+  }
+}
+
+@layer utilities {
+  .bg-glass {
+    @apply bg-white bg-opacity-60 backdrop-blur-lg;
+  }
+}
