@@ -640,7 +640,7 @@ export default function AirdropsPage() {
       // 🚀 2. SILENT BACKGROUND SYNC: Fetch the absolute newest data from Supabase
       const { data, error } = await supabase
         .from('projects')
-        .select('id, slug, name, logo_url, funding, tier, status, airdrop_status, total_cost_estimate, task_count, social_score')
+        .select('id, slug, name, logo_url, funding, tier, status, airdrop_status, total_time_estimate, total_cost_estimate, task_count, social_score, created_at')
         .eq('is_public', true)
         .order('created_at', { ascending: false });
 
@@ -921,14 +921,14 @@ export default function AirdropsPage() {
                     {/* TIME */}
                     <td className="px-4 text-center">
                       <span className="text-xs text-slate-600">
-                        {p.total_time_estimate || '~30m'}
+                        {p.total_time_estimate ? `~${p.total_time_estimate}m` : '~30m'}
                       </span>
                     </td>
 
                     {/* COST */}
                     <td className="px-4 text-center">
-                      <span className="text-xs text-slate-600">
-                        {p.total_cost_estimate || 'Free'}
+                      <span className="text-xs font-medium text-slate-600">
+                        {formatCost(p.total_cost_estimate)}
                       </span>
                     </td>
 

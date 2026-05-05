@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Edit2, Trash2, Database, DollarSign, CheckSquare, X, Download, Image as ImageIcon, Sparkles, List, Lightbulb } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, Database, DollarSign, CheckSquare, X, Download, Image as ImageIcon, Sparkles, List, Lightbulb, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../supabaseClient'; 
 
 // --- AI PARSING UTILITY ---
@@ -380,6 +380,21 @@ Return ONLY JSON in this format:
     }
   };
 
+  const toggleVisibility = async (projectId, currentStatus) => {
+    try {
+      const newStatus = !currentStatus;
+      const { error } = await supabase.from('projects').update({ is_public: newStatus }).eq('id', projectId);
+      if (error) throw error;
+      
+      // Update local state for instant UI update
+      setProjects(prev => prev.map(p => 
+        p.id === projectId ? { ...p, is_public: newStatus } : p
+      ));
+    } catch (error) {
+      alert(`Toggle visibility failed: ${error.message}`);
+    }
+  };
+
   const handleSave = async () => {
     try {
       let result;
@@ -389,7 +404,8 @@ Return ONLY JSON in this format:
           x_link: formData.x_link || '', name: formData.name || '', logo_url: formData.logo_url || '',
           galxe_alias: formData.galxe_alias || '', discord_link: formData.discord_link || '',
           tier: formData.tier || '', status: formData.status || '', airdrop_status: formData.airdrop_status || '',
-          description: formData.description || '', ai_research_data: formData.ai_research_data || '{}'
+          description: formData.description || '', ai_research_data: formData.ai_research_data || '{}',
+          is_public: formData.is_public !== false
         };
         if (editingItem) result = await supabase.from('projects').update(projectData).eq('id', editingItem.id);
         else result = await supabase.from('projects').insert([projectData]);
@@ -442,7 +458,7 @@ Return ONLY JSON in this format:
   };
 
   const getDefaultFormData = () => {
-    if (activeTab === 'projects') return { funding: '', lead_investors: '', x_link: '', name: '', logo_url: '', galxe_alias: '', discord_link: '', tier: 'Tier 3', status: 'Waitlist', airdrop_status: 'Unconfirmed', description: '', ai_research_data: '{}' };
+    if (activeTab === 'projects') return { funding: '', lead_investors: '', x_link: '', name: '', logo_url: '', galxe_alias: '', discord_link: '', tier: 'Tier 3', status: 'Waitlist', airdrop_status: 'Unconfirmed', description: '', ai_research_data: '{}', is_public: true };
     if (activeTab === 'tasks') return { project_id: '', name: '', recurring: 'One-time', link: '', cost: 0, time_minutes: 0, end_date: '', status: 'Active', rpc_url: '', contract_address: '', tutorial_markdown: '', external_link: '' };
     return { project_name: '', x_link: '', funding_amount: '', round: '', lead_investor: '', category: '', sector: '', project_logo: '', ai_research_data: '{}' };
   };
@@ -498,7 +514,7 @@ Return ONLY JSON in this format:
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-xs uppercase tracking-widest text-slate-500 font-black">
                   {activeTab === 'projects' ? (
-                    <><th className="px-6 py-4">Project Name</th><th className="px-6 py-4">Tier</th><th className="px-6 py-4">Status</th><th className="px-6 py-4 text-right">Actions</th></>
+                    <><th className="px-6 py-4">Project Name</th><th className="px-6 py-4">Tier</th><th className="px-6 py-4">Status</th><th className="px-6 py-4">Visibility</th><th className="px-6 py-4 text-right">Actions</th></>
                   ) : activeTab === 'tasks' ? (
                     <><th className="px-6 py-4">Task Name</th><th className="px-6 py-4">Project</th><th className="px-6 py-4">Type</th><th className="px-6 py-4 text-right">Actions</th></>
                   ) : (
@@ -515,6 +531,19 @@ Return ONLY JSON in this format:
                     </td>
                     <td className="px-6 py-4"><span className="text-sm font-medium text-slate-700">{p.tier}</span></td>
                     <td className="px-6 py-4"><span className="text-xs px-2.5 py-1 rounded-md font-bold uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200">{p.status}</span></td>
+                    <td className="px-6 py-4">
+                      <button 
+                        onClick={() => toggleVisibility(p.id, p.is_public)}
+                        className={`p-2 rounded-lg transition-colors ${
+                          p.is_public 
+                            ? 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50' 
+                            : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+                        }`}
+                        title={p.is_public ? 'Public - Click to make private' : 'Private - Click to make public'}
+                      >
+                        {p.is_public ? <Eye size={16} /> : <EyeOff size={16} />}
+                      </button>
+                    </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button onClick={() => openModal(p)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"><Edit2 size={16} /></button>
@@ -639,6 +668,18 @@ Return ONLY JSON in this format:
                     <select value={formData.airdrop_status || ''} onChange={(e) => handleInputChange('airdrop_status', e.target.value)} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 text-sm font-medium text-slate-700">
                       <option value="Confirmed">Confirmed</option><option value="Possible">Possible</option><option value="Unconfirmed">Unconfirmed</option>
                     </select>
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="flex items-center gap-3 text-[11px] font-black text-slate-500 uppercase tracking-widest cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={formData.is_public !== false} 
+                        onChange={(e) => handleInputChange('is_public', e.target.checked)}
+                        className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 focus:ring-2"
+                      />
+                      <span>Is Public (visible to users)</span>
+                    </label>
+                    <p className="text-xs text-slate-500 mt-1 ml-7">Uncheck to hide this project from public view</p>
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1">Project Description</label>

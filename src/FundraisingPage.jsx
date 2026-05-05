@@ -8,7 +8,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, 
   PieChart, Pie, Cell, Legend, LabelList 
 } from 'recharts';
-import ResearchInsights from './ResearchInsights';
+import AIResearchPanel from './AIResearchPanel';
 
 // --- AI PARSING UTILITY ---
 const safeParseAI = (data) => {
@@ -482,7 +482,7 @@ export default function FundraisingPage() {
 
     return (
       <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center" onClick={onClose}>
-        <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="bg-white rounded-2xl max-w-6xl w-[95%] max-h-[90vh] overflow-y-auto p-8 shadow-2xl" onClick={(e) => e.stopPropagation()}>
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
@@ -543,8 +543,7 @@ export default function FundraisingPage() {
 
           {/* Section 3: Research Data */}
           <div className="mb-6">
-            <h3 className="text-sm font-black text-slate-900 mb-2">Research Data</h3>
-            <ResearchInsights data={safeParseAI(project.ai_research_data)} />
+            <AIResearchPanel rawData={project.ai_research_data}/>
           </div>
 
           {/* Optional Links */}
