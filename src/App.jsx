@@ -40,7 +40,10 @@ import EarlylistMobile from './mobile/admin/EarlylistMobile';
 import TokenGiveawaysMobile from './mobile/admin/TokenGiveawaysMobile';
 import PendingReviewsMobile from './mobile/admin/PendingReviewsMobile';
 import AlphaStudioMobile from './mobile/admin/AlphaStudioMobile';
+<<<<<<< HEAD
 import InvestorLogoStudioMobile from './mobile/admin/InvestorLogoStudioMobile';
+=======
+>>>>>>> 4d22f92e1168d4aa184430f7f5045273a7023892
 import AdminContentManager from './admin/AdminContentManager';
 import Overview from './admin/Overview';
 import Manageas from './admin/Manageas';
@@ -48,7 +51,10 @@ import Earlylist from './admin/Earlylist';
 import AdminExchangeOffers from './admin/ExchangeOffers';
 import TokenGiveaways from './admin/TokenGiveaways';
 import PendingReviews from './admin/PendingReviews';
+<<<<<<< HEAD
 import InvestorLogoStudio from './admin/InvestorLogoStudio';
+=======
+>>>>>>> 4d22f92e1168d4aa184430f7f5045273a7023892
 
 // --- NESTED PROFILE COMPONENTS ---
 import ProfileOnchain from './profile/ProfileOnchain';
@@ -153,7 +159,10 @@ const AppLayout = () => {
             <Route path="content" element={isMobile ? <AdminContentManagerMobile /> : <AdminContentManager />} />
             <Route path="early" element={isMobile ? <EarlylistMobile /> : <Earlylist />} />
             <Route path="giveaways" element={isMobile ? <TokenGiveawaysMobile /> : <TokenGiveaways />} />
+<<<<<<< HEAD
             <Route path="pioneers" element={isMobile ? <InvestorLogoStudioMobile /> : <InvestorLogoStudio />} />
+=======
+>>>>>>> 4d22f92e1168d4aa184430f7f5045273a7023892
             <Route path="pendingreviews" element={isMobile ? <PendingReviewsMobile /> : <PendingReviews />} />
             <Route path="studio" element={isMobile ? <AlphaStudioMobile /> : <Studio />} />
           </Route>

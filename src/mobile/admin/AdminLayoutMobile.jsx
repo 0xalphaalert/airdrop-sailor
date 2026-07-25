@@ -2,7 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { 
   Menu, X, Brain, Database, FileText, 
+<<<<<<< HEAD
   Gift, ClipboardCheck, Paintbrush, LogOut, Image 
+=======
+  Gift, ClipboardCheck, Paintbrush, LogOut 
+>>>>>>> 4d22f92e1168d4aa184430f7f5045273a7023892
 } from 'lucide-react';
 
 export default function AdminLayoutMobile() {
@@ -31,7 +35,10 @@ export default function AdminLayoutMobile() {
     { name: 'Content Manager', path: '/admin/content', icon: <FileText size={18} /> },
     { name: 'AI Intelligence', path: '/admin/early', icon: <Brain size={18} /> },
     { name: 'Token Giveaways', path: '/admin/giveaways', icon: <Gift size={18} /> },
+<<<<<<< HEAD
     { name: 'Pioneer Studio', path: '/admin/pioneers', icon: <Image size={18} /> },
+=======
+>>>>>>> 4d22f92e1168d4aa184430f7f5045273a7023892
     { name: 'Pending Reviews', path: '/admin/pendingreviews', icon: <ClipboardCheck size={18} /> },
     { name: 'Alpha Studio', path: '/admin/studio', icon: <Paintbrush size={18} /> },
   ];

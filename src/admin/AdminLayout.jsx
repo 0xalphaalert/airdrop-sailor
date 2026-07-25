@@ -1,8 +1,15 @@
 import React, { useState, useEffect } from 'react';
+<<<<<<< HEAD
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../useAuth';
 import { supabase } from '../supabaseClient';
 import { PanelLeftOpen, PanelLeftClose } from 'lucide-react';
+=======
+import { Outlet, Link, useLocation, Navigate } from 'react-router-dom';
+import { useAuth } from '../useAuth';
+import { supabase } from '../supabaseClient';
+import { Menu, PanelLeftOpen, PanelLeftClose } from 'lucide-react';
+>>>>>>> 4d22f92e1168d4aa184430f7f5045273a7023892
 import SEO from '../components/SEO';
 
 export default function AdminLayout() {
@@ -11,7 +18,11 @@ export default function AdminLayout() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
 
+<<<<<<< HEAD
   // 🚀 BOUNCER / ADMIN CHECK
+=======
+  // 🚀 BOUNCER / ADMIN CHECK (Upgraded for Supabase)
+>>>>>>> 4d22f92e1168d4aa184430f7f5045273a7023892
   const adminEmail = import.meta.env.VITE_ADMIN_EMAIL?.toLowerCase() || 'dkrout006@gmail.com'; 
   const rawEmail = typeof user?.email === 'string' ? user.email : user?.email?.address;
   const currentUserEmail = rawEmail?.toLowerCase();
@@ -35,14 +46,26 @@ export default function AdminLayout() {
     return () => clearInterval(interval);
   }, []);
 
+<<<<<<< HEAD
   // 🚀 Cleaned Navigation Map (Removed unused menu options)
+=======
+  // Navigation Map
+>>>>>>> 4d22f92e1168d4aa184430f7f5045273a7023892
   const navItems = [
     { id: 'overview', path: '/admin', label: 'Command Center', icon: '🧠' },
     { id: 'manageas', path: '/admin/manage', label: 'Manage Core DB', icon: '⚙️' },
     { id: 'content', path: '/admin/content', label: 'Content Manager', icon: '📝' },
     { id: 'earlylist', path: '/admin/early', label: 'AI Intelligence', icon: '📡' },
+<<<<<<< HEAD
     { id: 'giveaways', path: '/admin/giveaways', label: 'Token Giveaways', icon: '🎁' },
     { id: 'pioneers', path: '/admin/pioneers', label: 'Pioneer Studio', icon: '🖼️' },
+=======
+    { id: 'projects', path: '/admin/projects', label: 'Project Research', icon: '🔍' },
+    { id: 'exchange', path: '/admin/exchange', label: 'Exchange Offers', icon: '💱' },
+    { id: 'giveaways', path: '/admin/giveaways', label: 'Token Giveaways', icon: '🎁' },
+    { id: 'earlyquests', path: '/admin/earlyquests', label: 'Early Quests', icon: '🎯' },
+    { id: 'dailytasks', path: '/admin/dailytasks', label: 'Daily Tasks', icon: '✅' },
+>>>>>>> 4d22f92e1168d4aa184430f7f5045273a7023892
     { id: 'pendingreviews', path: '/admin/pendingreviews', label: 'Pending Reviews', icon: '📋', badge: true },
     { id: 'studio', path: '/admin/studio', label: 'Alpha Studio', icon: '🎨' },
   ];
@@ -55,6 +78,10 @@ export default function AdminLayout() {
     </div>
   );
   
+<<<<<<< HEAD
+=======
+  // 🚀 The newly secured email check
+>>>>>>> 4d22f92e1168d4aa184430f7f5045273a7023892
   if (ready && authenticated && currentUserEmail !== adminEmail) return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center text-white font-black uppercase tracking-widest text-red-500">
           Access Denied
@@ -89,6 +116,10 @@ export default function AdminLayout() {
               key={item.id} 
               to={item.path}
               className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-xl font-bold text-[13px] transition-all relative ${
+<<<<<<< HEAD
+=======
+                // Exact match for overview, startsWith for sub-routes
+>>>>>>> 4d22f92e1168d4aa184430f7f5045273a7023892
                 (item.path === '/admin' ? location.pathname === '/admin' : location.pathname.startsWith(item.path))
                 ? 'bg-blue-600 text-white shadow-md' 
                 : 'text-gray-400 hover:bg-gray-800 hover:text-white'
@@ -126,6 +157,10 @@ export default function AdminLayout() {
 
       {/* DYNAMIC MAIN CONTENT AREA */}
       <main className="flex-1 overflow-y-auto relative z-10 p-6 md:p-10 custom-scrollbar">
+<<<<<<< HEAD
+=======
+        {/* THIS IS WHERE REACT ROUTER INJECTS THE SUB-PAGES */}
+>>>>>>> 4d22f92e1168d4aa184430f7f5045273a7023892
         <Outlet /> 
       </main>
       
