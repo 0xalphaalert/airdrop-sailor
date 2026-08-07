@@ -305,7 +305,7 @@ export default function MarketplacePage() {
           </div>
           <div className="bg-white border border-slate-200 rounded-xl px-4 py-2 shadow-sm text-right">
             <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">Your Balance</div>
-            <div className="text-xl font-black text-blue-600">{userBalance.toLocaleString()} SAIL</div>
+            <div className="text-xl font-black text-blue-600 tabular">{userBalance.toLocaleString()} SAIL</div>
           </div>
         </div>
 
@@ -380,7 +380,7 @@ const isPassActive = (activeTier === 'Sailor Pass' || activeTier === 'Voyager Pa
                     <div className="font-bold text-slate-900">{s.title}</div>
                   </div>
                   <p className="text-sm text-slate-500 mt-3 flex-1">{s.description}</p>
-                  <div className="mt-4 text-blue-600 font-bold">
+                  <div className="mt-4 text-blue-600 font-bold tabular">
                     {s.cost_sail.toLocaleString()} <span className="text-slate-500 font-medium text-sm">SAIL / {daysText} Days</span>
                   </div>
                   
@@ -426,14 +426,16 @@ const isPassActive = (activeTier === 'Sailor Pass' || activeTier === 'Voyager Pa
                     <img src={n.banner_url} alt={n.title} className="w-full h-full object-cover" />
                   </div>
                 ) : (
-                  <div className="h-40 rounded-xl bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center text-6xl">🖼️</div>
+                  <div className="h-40 rounded-xl bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center">
+                    <Box className="w-16 h-16 text-slate-400" />
+                  </div>
                 )}
                 <div className="flex items-center gap-2 mt-4">
                   <div className="font-bold text-slate-900">{n.title}</div>
                   <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">Whitelist</span>
                 </div>
                 <div className="text-xs text-slate-500 mt-1">{n.description}</div>
-                <div className="mt-2 text-blue-600 font-bold text-sm">• {n.cost_sail.toLocaleString()} SAIL</div>
+                <div className="mt-2 text-blue-600 font-bold text-sm tabular">• {n.cost_sail.toLocaleString()} SAIL</div>
                 <PrimaryGhostBtn onClick={() => handleActionClick(n)} disabled={isLoading}>
                   {isLoading ? 'Unlocking...' : isOwned ? 'View Secret Link 🔓' : 'Claim'}
                 </PrimaryGhostBtn>
@@ -465,7 +467,7 @@ const isPassActive = (activeTier === 'Sailor Pass' || activeTier === 'Voyager Pa
                     </div>
                   </div>
                   <div className="text-xs text-slate-400 mt-3">Valid for 30 Days</div>
-                  <div className="mt-2 text-blue-600 font-bold">
+                  <div className="mt-2 text-blue-600 font-bold tabular">
                     {c.cost_sail.toLocaleString()} <span className="text-slate-500 font-medium text-sm">SAIL</span>
                   </div>
                   <PrimaryGhostBtn onClick={() => handleActionClick(c)} disabled={isLoading}>
@@ -499,7 +501,7 @@ const isPassActive = (activeTier === 'Sailor Pass' || activeTier === 'Voyager Pa
                     </div>
                   </div>
                   <div className="text-sm text-slate-600 mt-3">{a.description}</div>
-                  <div className="mt-2 text-blue-600 font-bold">
+                  <div className="mt-2 text-blue-600 font-bold tabular">
                     {a.cost_sail.toLocaleString()} <span className="text-slate-500 font-medium text-sm">SAIL</span>
                   </div>
                   <button 

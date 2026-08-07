@@ -229,6 +229,62 @@ export default function ManageCoreDBMobile() {
     } catch (err) { alert("AI enhancement failed: " + err.message); } finally { setIsAIEnhancing(false); }
   };
 
+  // --- GROQ AI TASK EXTRACTION ---
+  const generateTaskJSON = async (markdown) => {
+    const groqKey = import.meta.env.VITE_GROQ_API_KEY;
+    if (!groqKey) {
+      console.warn("No Groq API key found. Please add VITE_GROQ_API_KEY to your .env");
+      return {};
+    }
+
+    const prompt = `Analyze the following tutorial markdown and extract the information into a strict JSON object. 
+    Do NOT output any markdown formatting, conversational text, or code blocks. Only output the raw JSON.
+
+    MARKDOWN TO ANALYZE:
+    ${markdown}
+
+    REQUIRED JSON SCHEMA:
+    {
+      "headline": "String - Main title or hook of the task",
+      "short_description": "String - Brief 1-2 sentence summary",
+      "image_url": "String - The first image URL found in the markdown (or null)",
+      "steps": [
+        {
+          "action": "String - Step description",
+          "url": "String - The URL for this step (or null)"
+        }
+      ],
+      "key_actions": ["String", "String"],
+      "important_note": "String - Any pro-tips or warnings (or null)",
+      "primary_url": "String - The main overarching URL"
+    }`;
+
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${groqKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          { role: 'system', content: 'You are a strict data extraction AI. You must output in valid JSON format.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.1,
+        response_format: { type: "json_object" }
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      throw new Error(`Groq API Error: ${err}`);
+    }
+
+    const data = await response.json();
+    return JSON.parse(data.choices[0].message.content);
+  };
+
   // --- CRUD ---
   const handleDelete = async (id, table) => {
     if (!window.confirm('Delete this record?')) return;
@@ -280,13 +336,36 @@ export default function ManageCoreDBMobile() {
           }
         }
       } else if (activeTab === 'tasks') {
+        
+        // 1. Automatically generate the post_json if we have markdown
+        let generatedPostJson = {};
+        if (formData.tutorial_markdown && formData.tutorial_markdown.trim() !== '') {
+          try {
+            generatedPostJson = await generateTaskJSON(formData.tutorial_markdown);
+          } catch (error) {
+            console.error("Failed to generate JSON with Groq:", error);
+            alert("Warning: AI JSON extraction failed. Saving task with empty JSON.");
+          }
+        }
+
+        // 2. Prepare the payload for Supabase
         const taskData = {
-          project_id: formData.project_id || '', name: formData.name || '', recurring: formData.recurring || 'One-time',
-          link: formData.link || '', cost: parseFloat(formData.cost) || 0, time_minutes: parseInt(formData.time_minutes) || 0,
-          end_date: formData.end_date || null, status: formData.status || 'Active', rpc_url: formData.rpc_url || '',
-          contract_address: formData.contract_address || '', tutorial_markdown: formData.tutorial_markdown || '',
-          external_link: formData.external_link || '', source: entryType
+          project_id: formData.project_id || '', 
+          name: formData.name || '', 
+          recurring: formData.recurring || 'One-time',
+          link: formData.link || '', 
+          cost: parseFloat(formData.cost) || 0, 
+          time_minutes: parseInt(formData.time_minutes) || 0,
+          end_date: formData.end_date || null, 
+          status: formData.status || 'Active', 
+          rpc_url: formData.rpc_url || '',
+          contract_address: formData.contract_address || '', 
+          tutorial_markdown: formData.tutorial_markdown || '',
+          post_json: generatedPostJson, // <-- INJECTED GROQ JSON HERE
+          external_link: formData.external_link || '', 
+          source: entryType
         };
+        
         if (editingItem) result = await supabase.from('tasks').update(taskData).eq('id', editingItem.id);
         else result = await supabase.from('tasks').insert([taskData]);
       } else {

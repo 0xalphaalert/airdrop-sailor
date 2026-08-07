@@ -44,8 +44,8 @@ export default function AdminLayout() {
     { id: 'giveaways', path: '/admin/giveaways', label: 'Token Giveaways', icon: '🎁' },
     { id: 'pioneers', path: '/admin/pioneers', label: 'Pioneer Studio', icon: '🖼️' },
     { id: 'pendingreviews', path: '/admin/pendingreviews', label: 'Pending Reviews', icon: '📋', badge: true },
-    { id: 'studio', path: '/admin/studio', label: 'Alpha Studio', icon: '🎨' },
   ];
+
 
   // Auth States
   if (!ready) return <div className="min-h-screen bg-gray-950 flex items-center justify-center font-bold text-gray-500">Verifying Clearance...</div>;

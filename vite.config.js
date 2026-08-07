@@ -5,6 +5,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 export default defineConfig({
   plugins: [
     react(),
+    
     VitePWA({
       registerType: 'autoUpdate',
       // 🚀 1. ADD THIS BLOCK TO ENABLE PWA ON LOCALHOST:5173

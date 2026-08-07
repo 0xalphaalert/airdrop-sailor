@@ -55,7 +55,7 @@ const HeroDashboard = ({ topProject, stats }) => {
             </div>
             <div>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Active Projects</p>
-              <p className="text-lg font-black text-slate-900 leading-none">{stats.totalProjects}</p>
+              <p className="text-lg font-black text-slate-900 leading-none tabular">{stats.totalProjects}</p>
             </div>
           </div>
           
@@ -65,7 +65,7 @@ const HeroDashboard = ({ topProject, stats }) => {
             </div>
             <div>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Pending Tasks</p>
-              <p className="text-lg font-black text-slate-900 leading-none">{stats.pendingTasks}</p>
+              <p className="text-lg font-black text-slate-900 leading-none tabular">{stats.pendingTasks}</p>
             </div>
           </div>
 
@@ -75,7 +75,7 @@ const HeroDashboard = ({ topProject, stats }) => {
             </div>
             <div>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Avg. Farm Cost</p>
-              <p className="text-lg font-black text-slate-900 leading-none">${stats.totalFarmCost.toLocaleString()}</p>
+              <p className="text-lg font-black text-slate-900 leading-none tabular">${stats.totalFarmCost.toLocaleString()}</p>
             </div>
           </div>
         </div>
@@ -104,7 +104,7 @@ const HeroDashboard = ({ topProject, stats }) => {
               <path className="text-emerald-400" strokeDasharray="100, 100" strokeDashoffset="20" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
             </svg>
             <div className="flex flex-col items-center justify-center relative z-10">
-              <span className="text-lg font-black text-white leading-none">{Math.round(topProject?._score || 0)}</span>
+              <span className="text-lg font-black text-white leading-none tabular">{Math.round(topProject?._score || 0)}</span>
             </div>
             <span className="absolute -bottom-5 w-[200%] text-center text-[8px] font-black uppercase tracking-widest text-slate-400">Airdrop Score</span>
           </div>
@@ -154,9 +154,6 @@ const TopOpportunitiesGrid = ({ projects }) => {
           <h2 className="text-xl font-black text-slate-900 tracking-tight">Today's Top Opportunities</h2>
           <span className="text-[10px] font-black uppercase tracking-widest text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100">AI Selected</span>
         </div>
-        <button className="text-xs font-bold text-slate-500 hover:text-slate-900 flex items-center gap-1 bg-white border border-slate-200 px-3 py-1.5 rounded-full shadow-sm transition-colors">
-          View all <ChevronRight size={12} />
-        </button>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -176,7 +173,7 @@ const TopOpportunitiesGrid = ({ projects }) => {
                   </div>
                 </div>
                 <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${scoreColor}`}>
-                  <span className="text-xs font-black">{score}</span>
+                  <span className="text-xs font-black tabular">{score}</span>
                 </div>
               </div>
 
@@ -384,9 +381,6 @@ const LatestAlpha = ({ events }) => {
         <h3 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
           <Zap size={20} className="text-amber-500 fill-amber-500" /> Latest Alpha
         </h3>
-        <button className="text-xs font-bold text-slate-500 hover:text-slate-900 flex items-center gap-1 bg-white border border-slate-200 px-3 py-1.5 rounded-full shadow-sm transition-colors">
-          View all <ChevronRight size={12} />
-        </button>
       </div>
 
       <div className="flex overflow-x-auto gap-4 pb-4 custom-scrollbar -mx-2 px-2 snap-x">
@@ -476,6 +470,7 @@ export default function AirdropsPage() {
   const [filterFunding, setFilterFunding] = useState('All');
   const [filterTier, setFilterTier] = useState('All');
   const [filterStatus, setFilterStatus] = useState('All');
+  const [sortBy, setSortBy] = useState('total');
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 15;
 
@@ -485,17 +480,6 @@ export default function AirdropsPage() {
     fetchProjects();
     fetchDashboardStats();
   }, [user?.id]); 
-
-  const calculateScore = (p) => {
-    const social = p.social_score || 0;
-    const fundingVal = parseFundingToMillions(p.funding);
-    const fundingScore = Math.min(fundingVal / 20, 1) * 100;
-    let tierScore = 30;
-    if (p.tier?.includes('1')) tierScore = 100;
-    else if (p.tier?.includes('2')) tierScore = 70;
-    const taskScore = Math.min((p.task_count || 0) * 10, 100);
-    return Math.round(social * 0.4 + fundingScore * 0.3 + tierScore * 0.2 + taskScore * 0.1);
-  };
 
   const getEffort = (p) => {
     const cost = parseFloat(p.total_cost_estimate || 0);
@@ -508,7 +492,7 @@ export default function AirdropsPage() {
   const scoredProjects = useMemo(
     () => projects.map((p) => ({
       ...p,
-      _score: calculateScore(p),
+      _score: p.score_total || 0, // Pulling directly from the new PostgreSQL column!
       _effort: getEffort(p),
       _fundingVal: parseFundingToMillions(p.funding)
     })),
@@ -546,7 +530,7 @@ export default function AirdropsPage() {
 
       const { data, error } = await supabase
         .from('projects')
-        .select('id, slug, name, logo_url, funding, lead_investors, tier, status, airdrop_status, total_time_estimate, total_cost_estimate, task_count, social_score, created_at')
+        .select('id, slug, name, logo_url, funding, lead_investors, tier, status, airdrop_status, total_time_estimate, total_cost_estimate, task_count, social_score, created_at, score_total, score_airdrop, score_social, score_funding, score_fundamental')
         .eq('is_public', true)
         .order('created_at', { ascending: false });
 
@@ -653,7 +637,9 @@ export default function AirdropsPage() {
   };
   
   useEffect(() => {
-    let result = [...scoredProjects].sort((a, b) => b._score - a._score);
+    let result = [...scoredProjects];
+    
+    // 1. Apply Filters
     if (searchTerm) result = result.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
     if (filterFunding !== 'All') {
       result = result.filter(p => {
@@ -667,9 +653,18 @@ export default function AirdropsPage() {
     if (filterTier !== 'All') result = result.filter(p => p.tier === filterTier);
     if (filterStatus !== 'All') result = result.filter(p => p.status === filterStatus);
 
+    // 2. Apply Sorting based on the sortBy state
+    result.sort((a, b) => {
+      if (sortBy === 'social') return (b.score_social || 0) - (a.score_social || 0);
+      if (sortBy === 'funding') return (b.score_funding || 0) - (a.score_funding || 0);
+      if (sortBy === 'airdrop') return (b.score_airdrop || 0) - (a.score_airdrop || 0);
+      if (sortBy === 'fundamental') return (b.score_fundamental || 0) - (a.score_fundamental || 0);
+      return (b._score || 0) - (a._score || 0); // Default to total score
+    });
+
     setFilteredProjects(result);
     setCurrentPage(1); 
-  }, [searchTerm, filterFunding, filterTier, filterStatus, scoredProjects]);
+  }, [searchTerm, filterFunding, filterTier, filterStatus, sortBy, scoredProjects]);
 
   const totalPages = Math.ceil(filteredProjects.length / ITEMS_PER_PAGE);
   const paginatedProjects = filteredProjects.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
@@ -697,6 +692,8 @@ export default function AirdropsPage() {
           setFilterTier={setFilterTier}
           filterStatus={filterStatus}
           setFilterStatus={setFilterStatus}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
           currentPage={currentPage}
           setCurrentPage={setCurrentPage}
           totalPages={totalPages}
@@ -742,9 +739,13 @@ export default function AirdropsPage() {
               <option value="Point Farming">Point Farming</option>
               <option value="TGE">TGE</option>
             </select>
-            <button className="text-xs font-bold border border-slate-200 rounded-full px-4 py-2 bg-white text-slate-700 hover:border-blue-300 transition-colors shadow-sm flex items-center gap-1.5">
-              <BarChart2 size={14} /> More Filters
-            </button>
+            <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="text-xs font-bold border border-slate-200 rounded-full px-4 py-2 bg-white text-slate-700 outline-none hover:border-blue-300 transition-colors cursor-pointer shadow-sm appearance-none pr-8 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2212%22%20height%3D%2212%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M3%204.5l3%203%203-3%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%2F%3E%3C%2Fsvg%3E')] bg-[length:12px] bg-no-repeat bg-[right_12px_center]">
+              <option value="total">Sort: Total Score</option>
+              <option value="social">Sort: Social Score</option>
+              <option value="funding">Sort: Funding Score</option>
+              <option value="airdrop">Sort: Airdrop Score</option>
+              <option value="fundamental">Sort: AI Score</option>
+            </select>
           </div>
 
           <div className="relative w-full xl:w-72">
@@ -791,7 +792,7 @@ export default function AirdropsPage() {
 
                       <td className="px-4 text-center">
                         <div className={`mx-auto w-8 h-8 rounded-full border-2 flex items-center justify-center bg-white ${score >= 40 ? 'border-emerald-500 text-emerald-600' : 'border-blue-500 text-blue-600'}`}>
-                          <span className="text-[11px] font-black">{score}</span>
+                          <span className="text-[11px] font-black tabular">{score}</span>
                         </div>
                       </td>
 
@@ -802,7 +803,7 @@ export default function AirdropsPage() {
                       </td>
 
                       <td className="px-4 text-center">
-                        <span className={`text-[13px] font-black ${isZeroCost ? 'text-emerald-500' : 'text-slate-900'}`}>
+                        <span className={`text-[13px] font-black tabular ${isZeroCost ? 'text-emerald-500' : 'text-slate-900'}`}>
                           {isZeroCost ? '$0' : (p.total_cost_estimate.startsWith('$') ? p.total_cost_estimate : `$${p.total_cost_estimate}`)}
                         </span>
                       </td>
@@ -854,7 +855,7 @@ export default function AirdropsPage() {
           
           {totalPages > 1 && (
             <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t border-slate-100 bg-slate-50/50 gap-4 rounded-b-2xl">
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider tabular">
                 Showing <span className="text-slate-900">{((currentPage - 1) * ITEMS_PER_PAGE) + 1}</span> to <span className="text-slate-900">{Math.min(currentPage * ITEMS_PER_PAGE, filteredProjects.length)}</span> of <span className="text-slate-900">{filteredProjects.length}</span>
               </span>
               

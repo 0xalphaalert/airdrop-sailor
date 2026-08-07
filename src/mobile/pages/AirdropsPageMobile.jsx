@@ -21,6 +21,8 @@ export default function AirdropsPageMobile({
   setFilterTier,
   filterStatus,
   setFilterStatus,
+  sortBy,
+  setSortBy,
 }) {
   // State to manage Card Grid vs Table View toggle
   const [viewMode, setViewMode] = useState('card'); // 'card' or 'table'
@@ -76,15 +78,33 @@ export default function AirdropsPageMobile({
 
         {/* --- FILTER PILLS --- */}
         <div className="px-4 flex gap-2 overflow-x-auto no-scrollbar py-1">
-          <div className="px-4 py-2 bg-white border border-slate-200 rounded-full text-xs font-bold text-slate-700 shadow-sm whitespace-nowrap">
-            Tier (All)
-          </div>
-          <div className="px-4 py-2 bg-white border border-slate-200 rounded-full text-xs font-bold text-slate-700 shadow-sm whitespace-nowrap">
-            Funding (All)
-          </div>
-          <div className="px-4 py-2 bg-white border border-slate-200 rounded-full text-xs font-bold text-slate-700 shadow-sm whitespace-nowrap">
-            Phase (All)
-          </div>
+          <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="px-4 py-1.5 bg-white border border-slate-200 rounded-full text-xs font-bold text-slate-700 shadow-sm whitespace-nowrap outline-none appearance-none">
+            <option value="total">Sort: Total Score</option>
+            <option value="social">Sort: Social Score</option>
+            <option value="funding">Sort: Funding</option>
+            <option value="airdrop">Sort: Airdrop</option>
+            <option value="fundamental">Sort: AI Score</option>
+          </select>
+          <select value={filterTier} onChange={(e) => setFilterTier(e.target.value)} className="px-4 py-1.5 bg-white border border-slate-200 rounded-full text-xs font-bold text-slate-700 shadow-sm whitespace-nowrap outline-none appearance-none">
+            <option value="All">Tier (All)</option>
+            <option value="Tier 1">Tier 1</option>
+            <option value="Tier 2">Tier 2</option>
+            <option value="Tier 3">Tier 3</option>
+          </select>
+          <select value={filterFunding} onChange={(e) => setFilterFunding(e.target.value)} className="px-4 py-1.5 bg-white border border-slate-200 rounded-full text-xs font-bold text-slate-700 shadow-sm whitespace-nowrap outline-none appearance-none">
+            <option value="All">Funding (All)</option>
+            <option value="0-10M">0 - 10M</option>
+            <option value="10M-20M">10M - 20M</option>
+            <option value="20M+">20M+</option>
+          </select>
+          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="px-4 py-1.5 bg-white border border-slate-200 rounded-full text-xs font-bold text-slate-700 shadow-sm whitespace-nowrap outline-none appearance-none">
+            <option value="All">Phase (All)</option>
+            <option value="Waitlist">Waitlist</option>
+            <option value="Testnet">Testnet</option>
+            <option value="Mainnet">Mainnet</option>
+            <option value="Point Farming">Point Farming</option>
+            <option value="TGE">TGE</option>
+          </select>
         </div>
 
         {/* --- CONDITIONAL VIEW RENDERING --- */}

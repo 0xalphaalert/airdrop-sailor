@@ -7,10 +7,9 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        // This overrides Tailwind's default font to your premium font
-        sans: ['"Inter"', 'sans-serif'],
-        
-        display: ['"Space Grotesk"', 'sans-serif'], 
+        sans: ['"Inter"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        display: ['"Inter"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
       },
     },
   },

@@ -57,10 +57,16 @@ export function TrackerProvider({ children }) {
     const elapsed = Math.max(1, Math.round((Date.now() - timerStartedAt) / 1000));
     try {
       const table = task.source === 'project' ? 'tracker_user_tasks' : 'tracker_custom_tasks';
-      await supabase.from(table).update({ time_spent_seconds: task.timeSpent + elapsed }).eq('id', task.sourceId);
+      
+      // Optimistic update
+      const newTime = task.timeSpent + elapsed;
+      task.timeSpent = newTime;
+      setTasks(current => current.map(item => item.id === task.id ? { ...item, timeSpent: newTime } : item));
+      
       setActiveTimer(null); 
       setTimerStartedAt(null); 
-      await fetchTasks();
+      
+      await supabase.from(table).update({ time_spent_seconds: newTime }).eq('id', task.sourceId);
     } catch (error) { console.error('Unable to save timer:', error); }
   };
 
@@ -86,35 +92,57 @@ export function TrackerProvider({ children }) {
         nextDue = baseDate.toISOString();
       }
 
-      await supabase.from(table).update({ status: newStatus, last_completed_at: now.toISOString(), next_due_time: nextDue }).eq('id', task.sourceId);
-      await fetchTasks();
+      // Optimistic update
+      task.status = newStatus;
+      task.nextDue = nextDue;
+      task.lastCompletedAt = now.toISOString();
+      setTasks(current => current.map(item => item.id === task.id ? { ...item, status: newStatus, nextDue, lastCompletedAt: task.lastCompletedAt } : item));
+
       if (activeTimer?.id === task.id) { setActiveTimer(null); setTimerStartedAt(null); }
+      
+      await supabase.from(table).update({ status: newStatus, last_completed_at: task.lastCompletedAt, next_due_time: nextDue }).eq('id', task.sourceId);
     } catch (error) { console.error('Unable to complete task:', error); }
   };
 
   const saveNotes = async (task, notes) => {
+    // 1. Optimistic Update (fixes the cursor wiping issue instantly)
+    task.notes = notes; 
+    setTasks(current => current.map(item => item.id === task.id ? { ...item, notes } : item));
+    
+    // 2. Silent background save
     const table = task.source === 'project' ? 'tracker_user_tasks' : 'tracker_custom_tasks';
     await supabase.from(table).update({ notes }).eq('id', task.sourceId);
-    await fetchTasks();
   };
 
   const updatePriority = async (task, priority) => {
+    // 1. Optimistic Update
+    task.priority = priority;
+    setTasks(current => current.map(item => item.id === task.id ? { ...item, priority } : item));
+
+    // 2. Silent background save
     const table = task.source === 'project' ? 'tracker_user_tasks' : 'tracker_custom_tasks';
     await supabase.from(table).update({ priority }).eq('id', task.sourceId);
-    await fetchTasks();
   };
 
   const updateRecurrence = async (task, recurrence, preferredTime) => {
+    // 1. Optimistic Update (fixes the snapping dropdown issue)
+    task.recurrence = recurrence;
+    task.preferredTime = preferredTime;
+    setTasks(current => current.map(item => item.id === task.id ? { ...item, recurrence, preferredTime } : item));
+
+    // 2. Silent background save
     const table = task.source === 'project' ? 'tracker_user_tasks' : 'tracker_custom_tasks';
     await supabase.from(table).update({ custom_interval: recurrence, preferred_time: preferredTime }).eq('id', task.sourceId);
-    await fetchTasks();
   };
 
   const untrackTask = async (task) => {
+    // 1. Optimistic UI removal
+    setTasks(current => current.filter(item => item.id !== task.id));
+    if (activeTimer?.id === task.id) { setActiveTimer(null); setTimerStartedAt(null); }
+
+    // 2. Background delete
     const table = task.source === 'project' ? 'tracker_user_tasks' : 'tracker_custom_tasks';
     await supabase.from(table).delete().eq('id', task.sourceId);
-    if (activeTimer?.id === task.id) { setActiveTimer(null); setTimerStartedAt(null); }
-    await fetchTasks();
   };
 
   return (

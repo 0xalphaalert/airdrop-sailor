@@ -822,7 +822,7 @@ export default function FundraisingPage() {
                       </td>
 
                       {/* Amount */}
-                      <td className="px-6 py-4 font-black tracking-tight">
+                      <td className="px-6 py-4 font-black tracking-tight tabular">
                         {formattedFunding === 'Undisclosed' ? (
                           <span className="text-slate-400 italic font-medium">Undisclosed</span>
                         ) : (
@@ -886,7 +886,7 @@ export default function FundraisingPage() {
           {/* --- PAGINATION --- */}
           {!loading && processedData.length > 0 && (
             <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
-              <span className="text-sm font-medium text-slate-500">
+              <span className="text-sm font-medium text-slate-500 tabular">
                 Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, processedData.length)} of {processedData.length} projects
               </span>
               <div className="flex items-center gap-2">
@@ -925,7 +925,7 @@ const StatCard = ({ title, value, icon }) => (
   <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between hover:border-blue-200 transition-colors">
     <div>
       <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">{title}</p>
-      <p className="text-2xl font-black text-slate-900">{value}</p>
+      <p className="text-2xl font-black text-slate-900 tabular">{value}</p>
     </div>
     <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100">
       {icon}

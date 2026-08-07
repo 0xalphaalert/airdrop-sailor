@@ -4,6 +4,7 @@ import { supabase } from './supabaseClient';
 import {
   CheckCircle2, Crown, ShieldCheck, ArrowRight,
   Calendar, Sparkles, Clock, Flame, Plus, Minus,
+  Target, Zap, Gift, BarChart3, Tag,
 } from "lucide-react";
 
 import heroGraphic from "./assets/sailor-pass-hero.png";
@@ -94,12 +95,12 @@ export default function SubscriptionPage() {
   ];
 
   const unlocks = [
-    { icon: "🎯", title: "NFT Whitelists", desc: "Get guaranteed early whitelist spots on high-signal partner project launches — before they open to the public." },
-    { icon: "⚡", title: "FCFS Token Access", desc: "Claim priority access to new token launches via first-come-first-served windows reserved exclusively for members." },
-    { icon: "🎁", title: "Reward Chests", desc: "Open seasonal reward chests containing NFTs, tokens, and exclusive partner surprises each season." },
-    { icon: "👑", title: "OG Role Access", desc: "Receive verified OG status and community role assignments across partner Discord servers and ecosystems." },
-    { icon: "📊", title: "Premium Analytics", desc: "Unlock advanced wallet analytics, campaign performance tracking, and cross-chain portfolio insights." },
-    { icon: "🏷️", title: "Partner Coupons", desc: "Access exclusive fee discounts and protocol coupons from our growing roster of ecosystem partners." },
+    { icon: Target, title: "NFT Whitelists", desc: "Get guaranteed early whitelist spots on high-signal partner project launches — before they open to the public." },
+    { icon: Zap, title: "FCFS Token Access", desc: "Claim priority access to new token launches via first-come-first-served windows reserved exclusively for members." },
+    { icon: Gift, title: "Reward Chests", desc: "Open seasonal reward chests containing NFTs, tokens, and exclusive partner surprises each season." },
+    { icon: Crown, title: "OG Role Access", desc: "Receive verified OG status and community role assignments across partner Discord servers and ecosystems." },
+    { icon: BarChart3, title: "Premium Analytics", desc: "Unlock advanced wallet analytics, campaign performance tracking, and cross-chain portfolio insights." },
+    { icon: Tag, title: "Partner Coupons", desc: "Access exclusive fee discounts and protocol coupons from our growing roster of ecosystem partners." },
   ];
 
   // --- ADD THIS MOBILE HANDOFF RIGHT BEFORE THE DESKTOP RETURN ---
@@ -185,8 +186,8 @@ export default function SubscriptionPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {unlocks.map((item) => (
               <div key={item.title} className="bg-white border border-slate-200 rounded-2xl px-5 py-5 flex items-start gap-4 hover:shadow-md hover:border-slate-300 transition-all">
-                <div className="w-11 h-11 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center text-xl flex-shrink-0">
-                  {item.icon}
+                <div className="w-11 h-11 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <item.icon className="w-5 h-5 text-slate-700" />
                 </div>
                 <div className="min-w-0">
                   <div className="font-black text-slate-900 text-sm mb-1">{item.title}</div>

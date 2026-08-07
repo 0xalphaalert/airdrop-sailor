@@ -408,15 +408,15 @@ export default function XPLevelsPage() {
                   </defs>
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <div className="text-5xl font-black">{userLevel}</div>
+                  <div className="text-5xl font-black tabular">{userLevel}</div>
                   <div className="text-xs uppercase tracking-widest text-white/70">Level</div>
                 </div>
               </div>
 
               <div className="flex-1">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-black">{lifetimeXP.toLocaleString()}</span>
-                  <span className="text-white/60 font-medium">/ {nextLevelXP.toLocaleString()} SAIL</span>
+                  <span className="text-4xl font-black tabular">{lifetimeXP.toLocaleString()}</span>
+                  <span className="text-white/60 font-medium tabular">/ {nextLevelXP.toLocaleString()} SAIL</span>
                 </div>
                 <p className="text-white/70 mt-1 text-sm">{remainingXP.toLocaleString()} SAIL to reach Level {userLevel + 1}</p>
                 <div className="mt-3 h-2 w-full max-w-[280px] bg-white/15 rounded-full overflow-hidden">
@@ -424,7 +424,7 @@ export default function XPLevelsPage() {
                 </div>
                 <div className="flex gap-8 mt-6">
                   <div>
-                    <div className="flex items-center gap-2"><Flame className="w-5 h-5 text-orange-400" /><span className="text-2xl font-black">{currentStreak}</span></div>
+                    <div className="flex items-center gap-2"><Flame className="w-5 h-5 text-orange-400" /><span className="text-2xl font-black tabular">{currentStreak}</span></div>
                     <div className="text-xs text-white/70 mt-1">Day Streak</div>
                   </div>
                 </div>

@@ -7,57 +7,24 @@ import {
   Plus, Repeat2, Search, X, ChevronLeft, ChevronRight, Timer,
 } from 'lucide-react';
 
+import {
+  buildCompletionPayload,
+  calculateNextDueDate,
+  emitTrackerUpdate,
+  formatDuration,
+  intervalLabels,
+  isComplete,
+  isOverdue,
+  normalizeCustomTask,
+  normalizeProjectTask,
+  priorityTone,
+  statusFor,
+  tableForTask,
+  timeLeft,
+} from './trackerUtils';
+
 const EMPTY_FORM = { name: '', notes: '', priority: 'Medium', recurrence: 'once', dueDate: '' };
-const intervalLabels = { once: 'One-time', '24h': 'Daily', '7d': 'Weekly', '30d': 'Monthly' };
 
-const isComplete = task => task.status === 'completed';
-const isOverdue = task => !isComplete(task) && task.nextDue && new Date(task.nextDue) < new Date();
-const statusFor = task => isComplete(task) ? 'completed' : isOverdue(task) ? 'overdue' : 'pending';
-
-function formatDuration(seconds = 0) {
-  const days = Math.floor(seconds / 86400);
-  const hours = Math.floor((seconds % 86400) / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  if (days) return `${days}d ${hours}h`;
-  if (hours) return `${hours}h ${minutes}m`;
-  return `${Math.max(1, minutes)}m`;
-}
-
-function timeLeft(date) {
-  if (!date) return { label: 'No due date', className: 'text-slate-400' };
-  const seconds = Math.round((new Date(date).getTime() - Date.now()) / 1000);
-  if (seconds < 0) return { label: `${formatDuration(Math.abs(seconds))} late`, className: 'text-rose-500' };
-  return { label: `${formatDuration(seconds)} left`, className: seconds < 86400 ? 'text-amber-500' : 'text-slate-500' };
-}
-
-function priorityTone(priority) {
-  return { High: 'bg-rose-50 text-rose-600', Medium: 'bg-amber-50 text-amber-600', Low: 'bg-emerald-50 text-emerald-600' }[priority] || 'bg-slate-100 text-slate-600';
-}
-
-function normalizeProjectTask(row) {
-  const definition = row.tasks || {};
-  return {
-    id: `project-${row.id}`, sourceId: row.id, source: 'project', name: definition.name || 'Untitled task',
-    project: row.projects?.name || 'Project task', projectId: row.project_id || row.projects?.id || null, projectLogo: row.projects?.logo_url, notes: row.notes || '',
-    tutorialMarkdown: definition.tutorial_markdown || '',
-    resources: definition.resources || [], link: definition.link || row.link, priority: row.priority || 'Medium',
-    recurrence: row.custom_interval || 'once', nextDue: row.next_due_time, status: row.status || 'pending',
-    lastCompletedAt: row.last_completed_at, completionCount: Number(row.completion_count) || 0, timeSpent: Number(row.time_spent_seconds) || 0, xp: Number(definition.xp) || 0,
-    difficulty: row.priority || 'Medium', estimatedTime: definition.estimated_time || row.estimated_time || '2 min', preferredTime: row.preferred_time || '',
-  };
-}
-
-function normalizeCustomTask(row) {
-  return {
-    id: `custom-${row.id}`, sourceId: row.id, source: 'custom', name: row.name || row.title || row.task_name || 'Personal task',
-    project: row.project_name || 'Personal Workspace', projectId: row.project_id || null, notes: row.notes || row.note || row.description || '',
-    tutorialMarkdown: row.tutorial_markdown || '',
-    resources: row.resources || [], link: row.link || row.url, priority: row.priority || 'Medium',
-    recurrence: row.custom_interval || row.recurrence || 'once', nextDue: row.next_due_time || row.due_date,
-    status: row.status || 'pending', lastCompletedAt: row.last_completed_at, completionCount: Number(row.completion_count) || 0, timeSpent: Number(row.time_spent_seconds) || 0,
-    xp: Number(row.xp) || 0, difficulty: row.priority || 'Medium', estimatedTime: row.estimated_time || 'Personal', preferredTime: row.preferred_time || '',
-  };
-}
 
 export default function TrackerTasks() {
   const [tasks, setTasks] = useState([]);
@@ -131,8 +98,7 @@ export default function TrackerTasks() {
     if (!task) return;
     setSavingNotes(true);
     try {
-      const table = task.source === 'project' ? 'tracker_user_tasks' : 'tracker_custom_tasks';
-      const { error } = await supabase.from(table).update({ notes }).eq('id', task.sourceId);
+      const { error } = await supabase.from(tableForTask(task)).update({ notes }).eq('id', task.sourceId);
       if (error) throw error;
       setTasks(current => current.map(item => item.id === task.id ? { ...item, notes } : item));
       setNotesDirty(false);
@@ -148,66 +114,28 @@ export default function TrackerTasks() {
 
   const completeTask = async (task) => {
     try {
-      const table = task.source === 'project' ? 'tracker_user_tasks' : 'tracker_custom_tasks';
-      const now = new Date();
-      const completedAt = now.toISOString();
-
-      const getRecurrenceType = (val) => {
-        if (!val) return 'once';
-        const lower = val.toLowerCase();
-        if (lower === 'daily' || lower === '24h') return 'daily';
-        if (lower === 'weekly' || lower === '7d') return 'weekly';
-        if (lower === 'monthly' || lower === '30d') return 'monthly';
-        return 'once';
-      };
-
-      const recurrenceType = getRecurrenceType(task.recurrence);
-
-      let newStatus = 'pending';
-      let nextDue = null;
-
-      if (recurrenceType === 'once') {
-        newStatus = 'completed';
-        nextDue = null;
-      } else {
-        let baseDate;
-
-        if (task.nextDue && new Date(task.nextDue) > now) {
-          baseDate = new Date(task.nextDue);
-        } else {
-          baseDate = new Date();
-          if (task.preferredTime) {
-            const [hours, minutes] = task.preferredTime.split(':');
-            baseDate.setHours(parseInt(hours, 10) || 0, parseInt(minutes, 10) || 0, 0, 0);
-          }
-        }
-
-        if (recurrenceType === 'daily') {
-          baseDate.setDate(baseDate.getDate() + 1);
-        } else if (recurrenceType === 'weekly') {
-          baseDate.setDate(baseDate.getDate() + 7);
-        } else if (recurrenceType === 'monthly') {
-          baseDate.setMonth(baseDate.getMonth() + 1);
-        }
-
-        nextDue = baseDate.toISOString();
-      }
-
+      // Recurrence maths lives in trackerUtils so Tasks and Daily stay in sync.
       const { error } = await supabase
-        .from(table)
-        .update({ status: newStatus, last_completed_at: completedAt, next_due_time: nextDue })
+        .from(tableForTask(task))
+        .update(buildCompletionPayload(task))
         .eq('id', task.sourceId);
 
       if (error) throw error;
 
       await fetchTasks();
 
+      // Tell TrackerHeader (and any other tracker surface) to re-read the live
+      // Streak / XP / SAIL figures — no hard refresh required.
+      emitTrackerUpdate({ reason: 'complete', taskId: task.id });
+
       if (activeTimer?.id === task.id) {
         setActiveTimer(null);
         setTimerStartedAt(null);
       }
+      setToast({ type: 'success', text: 'Task completed.' });
     } catch (error) {
       console.error('Unable to complete task:', error);
+      setToast({ type: 'error', text: 'Could not complete the task.' });
     }
   };
 
@@ -216,8 +144,7 @@ export default function TrackerTasks() {
     if (activeTimer.id !== task.id) return;
     const elapsed = Math.max(1, Math.round((Date.now() - timerStartedAt) / 1000));
     try {
-      const table = task.source === 'project' ? 'tracker_user_tasks' : 'tracker_custom_tasks';
-      const { error } = await supabase.from(table).update({ time_spent_seconds: task.timeSpent + elapsed }).eq('id', task.sourceId);
+      const { error } = await supabase.from(tableForTask(task)).update({ time_spent_seconds: task.timeSpent + elapsed }).eq('id', task.sourceId);
       if (error) throw error;
       setActiveTimer(null); setTimerStartedAt(null); await fetchTasks();
     } catch (error) { console.error('Unable to save timer:', error); }
@@ -226,32 +153,30 @@ export default function TrackerTasks() {
   const updateRecurrence = async (values) => {
     if (!selectedTask) return;
     try {
-      const table = selectedTask.source === 'project' ? 'tracker_user_tasks' : 'tracker_custom_tasks';
-
       const updates = {
         custom_interval: values.recurrence,
         preferred_time: values.preferredTime || null,
       };
 
-      if (selectedTask.status === 'completed' && values.recurrence !== 'once') {
+      if (values.recurrence === 'once') {
+        // Dropping recurrence keeps the existing due date untouched.
+        if (selectedTask.status !== 'completed') updates.status = 'pending';
+      } else if (selectedTask.status === 'completed') {
+        // Re-activating a finished task schedules the next occurrence.
         updates.status = 'pending';
-        const newDue = new Date();
-        if (values.preferredTime) {
-          const [hours, minutes] = values.preferredTime.split(':');
-          newDue.setHours(parseInt(hours, 10) || 0, parseInt(minutes, 10) || 0, 0, 0);
-        }
-        updates.next_due_time = newDue.toISOString();
-      } else if (selectedTask.status === 'pending' && selectedTask.nextDue) {
+        updates.next_due_time = calculateNextDueDate(values.recurrence, values.preferredTime, null);
+      } else if (values.preferredTime && selectedTask.nextDue) {
+        // Keep the same day, just move it to the newly preferred time of day.
         const updatedDue = new Date(selectedTask.nextDue);
-        if (values.preferredTime) {
-          const [hours, minutes] = values.preferredTime.split(':');
-          updatedDue.setHours(parseInt(hours, 10) || 0, parseInt(minutes, 10) || 0, 0, 0);
-          updates.next_due_time = updatedDue.toISOString();
-        }
+        const [hours, minutes] = values.preferredTime.split(':');
+        updatedDue.setHours(parseInt(hours, 10) || 0, parseInt(minutes, 10) || 0, 0, 0);
+        updates.next_due_time = updatedDue.toISOString();
+      } else if (!selectedTask.nextDue) {
+        updates.next_due_time = calculateNextDueDate(values.recurrence, values.preferredTime, null);
       }
 
       const { error } = await supabase
-        .from(table)
+        .from(tableForTask(selectedTask))
         .update(updates)
         .eq('id', selectedTask.sourceId);
 
@@ -268,8 +193,7 @@ export default function TrackerTasks() {
 
   const updatePriority = async (task, priority) => {
     try {
-      const table = task.source === 'project' ? 'tracker_user_tasks' : 'tracker_custom_tasks';
-      const { error } = await supabase.from(table).update({ priority }).eq('id', task.sourceId);
+      const { error } = await supabase.from(tableForTask(task)).update({ priority }).eq('id', task.sourceId);
       if (error) throw error;
       setTasks(current => current.map(item => item.id === task.id ? { ...item, priority, difficulty: priority } : item));
     } catch (error) { console.error('Unable to update priority:', error); }
@@ -278,12 +202,12 @@ export default function TrackerTasks() {
   const untrackTask = async task => {
     if (!window.confirm(`Untrack “${task.name}”? This removes it from your tracker.`)) return;
     try {
-      const table = task.source === 'project' ? 'tracker_user_tasks' : 'tracker_custom_tasks';
-      const { error } = await supabase.from(table).delete().eq('id', task.sourceId);
+      const { error } = await supabase.from(tableForTask(task)).delete().eq('id', task.sourceId);
       if (error) throw error;
       if (activeTimer?.id === task.id) { setActiveTimer(null); setTimerStartedAt(null); }
       setSelectedId(null);
       await fetchTasks();
+      emitTrackerUpdate({ reason: 'untrack', taskId: task.id });
       setToast({ type: 'success', text: 'Task untracked.' });
     } catch (error) { console.error('Unable to untrack task:', error); setToast({ type: 'error', text: 'Could not untrack the task.' }); }
   };
@@ -297,6 +221,7 @@ export default function TrackerTasks() {
       });
       if (error) throw error;
       setAddOpen(false); setForm(EMPTY_FORM); await fetchTasks();
+      emitTrackerUpdate({ reason: 'create' });
     } catch (error) { console.error('Unable to create personal task:', error); }
   };
 
@@ -312,7 +237,7 @@ export default function TrackerTasks() {
   return <div className="mx-auto w-full max-w-[1700px] px-4 py-6 font-sans sm:px-6 lg:px-8">
     <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div><h1 className="text-2xl font-semibold tracking-tight text-slate-900">Tasks</h1><p className="mt-1 text-sm font-medium text-slate-500">All tasks across your tracked projects and personal workspace.</p></div>
-      <button onClick={() => { setForm(EMPTY_FORM); setAddOpen(true); }} className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-violet-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700"><Plus className="h-4 w-4" /> Add task</button>
+      <button onClick={() => { setForm(EMPTY_FORM); setAddOpen(true); }} className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors duration-150 hover:bg-violet-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2"><Plus className="h-4 w-4" /> Add task</button>
     </header>
 
     <div className="grid items-start gap-6 xl:grid-cols-[230px_minmax(0,1fr)_400px]">
@@ -344,7 +269,8 @@ function OverviewCard({ summary, overview }) { return <section className="rounde
 function StreakCard() { return <section className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><div className="absolute -right-5 -top-5 h-24 w-24 rounded-full bg-orange-50" /><p className="text-sm font-semibold text-slate-800">Streak</p><div className="mt-3 flex items-end justify-between"><div><strong className="text-2xl font-semibold text-slate-900">12</strong><span className="ml-1 text-xs font-medium text-slate-400">days</span></div><Flame className="h-8 w-8 fill-orange-400 text-orange-500" /></div><p className="mt-4 text-xs font-medium text-slate-500">Keep it up 🔥</p><div className="mt-2 h-1.5 overflow-hidden rounded-full bg-violet-100"><div className="h-full w-4/5 rounded-full bg-violet-600" /></div></section>; }
 function FilterBar({ query, setQuery, filters, setFilter, projects, showFilters, setShowFilters, view, setView }) { return <div className="border-b border-slate-100 p-4"><div className="flex flex-wrap gap-2"><div className="relative min-w-[220px] flex-1"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search tasks, projects or notes..." className="h-10 w-full rounded-lg border border-slate-200 pl-9 pr-3 text-sm font-medium text-slate-700 outline-none focus:border-violet-500" /></div><Select value={filters.project} onChange={value => setFilter('project', value)}><option value="all">All Projects</option>{projects.map(project => <option key={project} value={project}>{project}</option>)}</Select><Select value={filters.status} onChange={value => setFilter('status', value)}><option value="all">All Status</option><option value="pending">Pending</option><option value="completed">Completed</option><option value="overdue">Overdue</option></Select><Select value={filters.recurrence} onChange={value => setFilter('recurrence', value)}><option value="all">All Recurrence</option><option value="once">One-time</option><option value="24h">Daily</option><option value="7d">Weekly</option><option value="30d">Monthly</option></Select><button onClick={() => setShowFilters(!showFilters)} className={`inline-flex h-10 items-center gap-2 rounded-lg border px-3 text-xs font-semibold ${showFilters ? 'border-violet-200 bg-violet-50 text-violet-600' : 'border-slate-200 text-slate-600'}`}><ListFilter className="h-4 w-4" /> Filters</button><div className="ml-auto flex overflow-hidden rounded-lg border border-slate-200"><button onClick={() => setView('list')} className={`grid h-10 w-10 place-items-center ${view === 'list' ? 'bg-violet-50 text-violet-600' : 'text-slate-400'}`}><List className="h-4 w-4" /></button><button onClick={() => setView('grid')} className={`grid h-10 w-10 place-items-center ${view === 'grid' ? 'bg-violet-50 text-violet-600' : 'text-slate-400'}`}><LayoutGrid className="h-4 w-4" /></button></div></div></div>; }
 function Select({ value, onChange, children }) { return <div className="relative"><select value={value} onChange={event => onChange(event.target.value)} className="h-10 appearance-none rounded-lg border border-slate-200 bg-white py-0 pl-3 pr-8 text-xs font-semibold text-slate-700 outline-none focus:border-violet-500">{children}</select><ChevronDown className="pointer-events-none absolute right-2 top-3 h-4 w-4 text-slate-400" /></div>; }
-function TaskList({ loading, tasks, selectedId, onSelect, pageStart }) { if (loading) return <div className="grid min-h-[500px] place-items-center text-sm font-medium text-slate-400">Loading your tasks…</div>; if (!tasks.length) return <div className="grid min-h-[500px] place-items-center text-center"><ClipboardList className="mx-auto mb-3 h-8 w-8 text-slate-300" /><p className="text-sm font-semibold text-slate-600">No tasks match these filters.</p></div>; return <div className="space-y-2 p-3">{tasks.map((task, index) => <TaskItem key={task.id} task={task} index={pageStart + index + 1} selected={selectedId === task.id} onClick={() => onSelect(task.id)} />)}</div>; }
+function TaskSkeleton() { return <div className="space-y-2 p-3">{Array.from({ length: 6 }).map((_, index) => <div key={index} className="flex min-h-[66px] items-center gap-3 rounded-xl border border-slate-200 bg-white p-3"><div className="h-10 w-10 shrink-0 animate-pulse rounded-lg bg-slate-100" /><div className="min-w-0 flex-1 space-y-2"><div className="h-3 w-2/5 animate-pulse rounded bg-slate-100" /><div className="h-2.5 w-1/4 animate-pulse rounded bg-slate-100" /></div><div className="h-5 w-16 shrink-0 animate-pulse rounded-md bg-slate-100" /></div>)}</div>; }
+function TaskList({ loading, tasks, selectedId, onSelect, pageStart }) { if (loading) return <TaskSkeleton />; if (!tasks.length) return <div className="grid min-h-[500px] place-items-center text-center"><ClipboardList className="mx-auto mb-3 h-8 w-8 text-slate-300" /><p className="text-sm font-semibold text-slate-600">No tasks match these filters.</p></div>; return <div className="space-y-2 p-3">{tasks.map((task, index) => <TaskItem key={task.id} task={task} index={pageStart + index + 1} selected={selectedId === task.id} onClick={() => onSelect(task.id)} />)}</div>; }
 function TaskItem({ task, index, selected, onClick }) { const status = statusFor(task); const left = timeLeft(task.nextDue); const statusClasses = { completed: 'bg-emerald-50 text-emerald-600', overdue: 'bg-rose-50 text-rose-600', pending: 'bg-amber-50 text-amber-600' }; return <button onClick={onClick} className={`flex w-full items-center gap-3 rounded-xl border bg-white p-3 text-left transition hover:border-violet-200 hover:bg-violet-50/30 ${selected ? 'border-violet-300 bg-violet-50/50 ring-1 ring-violet-100' : 'border-slate-200'}`}><div className="w-5 shrink-0 text-center text-xs font-semibold text-slate-400">{index}</div><div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-violet-100 text-violet-600">{task.projectLogo ? <img src={task.projectLogo} alt="" className="h-full w-full object-cover" /> : <FolderKanban className="h-4 w-4" />}</div><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-slate-800">{task.name}</p><p className="mt-0.5 truncate text-xs font-medium text-slate-400">{task.project}</p></div><div className="hidden min-w-[105px] sm:block"><p className="flex items-center gap-1 text-xs font-semibold text-emerald-600"><Repeat2 className="h-3.5 w-3.5" />{intervalLabels[task.recurrence] || task.recurrence}</p><p className={`mt-1 text-[11px] font-semibold ${left.className}`}>{left.label}</p></div><div className="flex shrink-0 flex-col items-end gap-1.5"><span className={`rounded-md px-2 py-1 text-[10px] font-semibold ${statusClasses[status]}`}>{status[0].toUpperCase() + status.slice(1)}</span><span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${priorityTone(task.priority)}`}>{task.priority}</span></div></button>; }
 function DetailPanel({ task, onComplete, onTimer, activeTimer, timerNow, timerStartedAt, onClose }) {
   if (!task) return <div className="grid min-h-[560px] place-items-center p-8 text-center"><div><ClipboardList className="mx-auto mb-3 h-8 w-8 text-slate-300" /><p className="text-sm font-semibold text-slate-600">Select a task to view its details.</p></div></div>;
@@ -382,9 +308,9 @@ function DetailPanel({ task, onComplete, onTimer, activeTimer, timerNow, timerSt
       </div>
       
       <div className="flex flex-wrap gap-3 border-t border-slate-100 p-5">
-        <button onClick={() => { const url = task.link || (Array.isArray(task.resources) && task.resources[0]?.url); if (url) window.open(url, "_blank"); if (!activeTimer || activeTimer.id !== task.id) onTimer(task); }} className="flex h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-blue-50 text-sm font-semibold text-blue-600 transition-colors hover:bg-blue-100"><ExternalLink className="h-4 w-4" /> Start Task</button>
-        <button onClick={() => onComplete(task)} disabled={status === "completed"} className="flex h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-violet-600 px-3 text-sm font-semibold text-white shadow-sm hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-violet-300"><CheckCircle2 className="h-4 w-4" /> {status === "completed" ? "Completed" : "Mark Complete"}</button>
-        <button onClick={() => onTimer(task)} className={`grid h-11 w-11 shrink-0 place-items-center rounded-lg border ${isTiming ? "border-violet-300 bg-violet-50 text-violet-600" : "border-slate-200 text-violet-600"}`} title={isTiming ? "Pause timer" : "Start timer"}>{isTiming ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}</button>
+        <button onClick={() => { const url = task.link || (Array.isArray(task.resources) && task.resources[0]?.url); if (url) window.open(url, "_blank"); if (!activeTimer || activeTimer.id !== task.id) onTimer(task); }} className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-violet-50 text-sm font-semibold text-violet-600 transition-colors duration-150 hover:bg-violet-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"><ExternalLink className="h-4 w-4" /> Start Task</button>
+        <button onClick={() => onComplete(task)} disabled={status === "completed"} className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-violet-600 px-3 text-sm font-semibold text-white shadow-sm transition-colors duration-150 hover:bg-violet-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-emerald-600"><CheckCircle2 className="h-4 w-4" /> {status === "completed" ? "Completed" : "Mark Complete"}</button>
+        <button onClick={() => onTimer(task)} className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl border transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 ${isTiming ? "border-violet-300 bg-violet-50 text-violet-600" : "border-slate-200 text-violet-600 hover:bg-violet-50"}`} title={isTiming ? "Pause timer" : "Start timer"}>{isTiming ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}</button>
       </div>
     </div>
   );
@@ -464,7 +390,7 @@ function TaskInfoNotes({ task, notes, setNotes, savingNotes, onEditSchedule, onP
       <div className="p-4 border-t border-slate-100 mt-auto">
         <button
           onClick={() => onUntrack(task)}
-          className="w-full rounded-lg border border-rose-200 bg-rose-50 py-2.5 text-xs font-semibold text-rose-600 transition hover:bg-rose-100"
+          className="w-full rounded-xl border border-rose-200 bg-rose-50 py-2.5 text-xs font-semibold text-rose-600 transition-colors duration-150 hover:bg-rose-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-300"
         >
           Untrack Task
         </button>

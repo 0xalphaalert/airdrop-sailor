@@ -21,7 +21,7 @@ export default function EarlyAirdropsPage() {
       // STRICT EARLY LOGIC: Only projects with 1, 0, or null tasks
       const { data, error } = await supabase
         .from('projects')
-        .select('*')
+        .select('id, slug, name, logo_url, funding, lead_investors, tier, status, airdrop_status, total_time_estimate, total_cost_estimate, task_count, social_score, created_at, score_total, score_airdrop')
         .or('task_count.lte.1,task_count.is.null')
         .order('created_at', { ascending: false });
 
@@ -32,26 +32,6 @@ export default function EarlyAirdropsPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  // --- SCORING LOGIC (Mirrored from Main Page) ---
-  const calculateScore = (p) => {
-    const social = p.social_score || 0;
-    const fundingVal = parseFloat(p.funding?.replace(/[^0-9.]/g, '') || 0);
-    const fundingScore = Math.min(fundingVal / 20, 1) * 100;
-
-    let tierScore = 30;
-    if (p.tier?.includes('1')) tierScore = 100;
-    else if (p.tier?.includes('2')) tierScore = 70;
-
-    const taskScore = Math.min((p.task_count || 0) * 10, 100);
-
-    return Math.round(
-      social * 0.4 +
-      fundingScore * 0.3 +
-      tierScore * 0.2 +
-      taskScore * 0.1
-    );
   };
 
   const getEffort = (p) => {
@@ -66,7 +46,7 @@ export default function EarlyAirdropsPage() {
   const scoredProjects = useMemo(
     () => projects.map((p) => ({
       ...p,
-      _score: calculateScore(p),
+      _score: p.score_total || 0, // Pulling directly from the new PostgreSQL column!
       _effort: getEffort(p),
       _fundingVal: parseFloat(p.funding?.replace(/[^0-9.]/g, '') || 0)
     })),

@@ -45,7 +45,7 @@ export default function ProfileSettingsMobile({
     <div className="min-h-screen w-full bg-[#F8FAFC] pb-32 font-sans">
       <MobileHeader />
 
-      <main className="w-full space-y-6 px-4 pb-6 pt-[68px]">
+      <main className="w-full space-y-6 px-4 pb-6 pt-4">
         {/* HERO CARD */}
         <section className="relative overflow-hidden rounded-3xl bg-[#0f172a] p-5 shadow-xl shadow-blue-950/10">
           <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-blue-500/20 blur-3xl" />

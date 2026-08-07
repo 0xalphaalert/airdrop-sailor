@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { 
   Menu, X, Brain, Database, FileText, 
-  Gift, ClipboardCheck, Paintbrush, LogOut, Image, Sparkles, Filter, Save, Trash2, Search, RefreshCw 
+  Gift, ClipboardCheck, LogOut, Image, Sparkles, Filter, Save, Trash2, Search, RefreshCw 
 } from 'lucide-react';
+
 
 export default function AdminLayoutMobile() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -33,8 +34,8 @@ export default function AdminLayoutMobile() {
     { name: 'Token Giveaways', path: '/admin/giveaways', icon: <Gift size={18} /> },
     { name: 'Pioneer Studio', path: '/admin/pioneers', icon: <Image size={18} /> },
     { name: 'Pending Reviews', path: '/admin/pendingreviews', icon: <ClipboardCheck size={18} /> },
-    { name: 'Alpha Studio', path: '/admin/studio', icon: <Paintbrush size={18} /> },
   ];
+
 
   return (
     <div className="min-h-screen bg-white text-slate-900 font-sans flex flex-col">

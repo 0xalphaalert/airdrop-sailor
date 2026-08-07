@@ -98,19 +98,6 @@ const [projectLimit, setProjectLimit] = useState(5);
     fetchUserLimits();
   }, [authenticated, user, isImporting, isUntracking]);
 
-  const getProjectScore = (p, taskCount = 0) => {
-    if (!p) return 0;
-    const social = p.social_score || 0;
-    const fundingVal = parseFloat(p.funding?.replace(/[^0-9.]/g, '') || 0);
-    const fundingScore = Math.min(fundingVal / 20, 1) * 100;
-    let tierScore = 30;
-    if (p.tier?.includes('1')) tierScore = 100;
-    else if (p.tier?.includes('2')) tierScore = 70;
-    const finalTaskCount = taskCount || p.task_count || 0;
-    const taskScore = Math.min(finalTaskCount * 10, 100);
-    return Math.round(social * 0.4 + fundingScore * 0.3 + tierScore * 0.2 + taskScore * 0.1);
-  };
-
   const fetchProjectData = async () => {
     setLoading(true);
     try {
@@ -166,9 +153,7 @@ const [projectLimit, setProjectLimit] = useState(5);
         .limit(30);
       
       if (allProjects) {
-        const scoredProjects = allProjects.map(p => ({
-          ...p, calculatedScore: getProjectScore(p)
-        })).sort((a, b) => b.calculatedScore - a.calculatedScore);
+        const scoredProjects = allProjects.sort((a, b) => (b.score_total || 0) - (a.score_total || 0));
         setTopProjects(scoredProjects.slice(0, 10));
       }
       // Fetch Discord Roles
@@ -197,7 +182,8 @@ const [projectLimit, setProjectLimit] = useState(5);
     }
   };
 
-  const calculateMasterScore = () => getProjectScore(project, tasks.length);
+  // Pulls the total score directly from your new database column
+  const calculateMasterScore = () => project?.score_total || 0;
 
   const renderDonutScore = () => {
     const score = calculateMasterScore();
@@ -340,7 +326,7 @@ const [projectLimit, setProjectLimit] = useState(5);
         project={project}
         loading={loading}
         tasks={tasks}
-        score={getProjectScore(project, tasks?.length)}
+        score={project.score_total || 0}
         hasImported={hasImported}
         isImporting={isImporting}
         isUntracking={isUntracking}
@@ -478,7 +464,7 @@ const [projectLimit, setProjectLimit] = useState(5);
                 </li>
                 <li className="flex justify-between items-center text-xs">
                   <span className="text-slate-500 font-bold">Social Score</span>
-                  <span className="font-black text-slate-900">{project.social_score || 'N/A'}</span>
+                  <span className="font-black text-slate-900">{project.score_social || 0} / 100</span>
                 </li>
               </ul>
             </div>
@@ -839,7 +825,7 @@ const [projectLimit, setProjectLimit] = useState(5);
                 } catch (e) {}
 
                 const fundingVal = project?.funding ? formatFunding(project.funding) : 'Undisclosed';
-                const confScore = aiData.final_verdict?.confidence_score || getProjectScore(project, tasks.length) || 82;
+                const confScore = aiData.final_verdict?.confidence_score || project.score_total || 82;
                 const confLabel = confScore > 75 ? 'High' : confScore > 50 ? 'Medium' : 'Low';
                 const stage = project?.tier || 'Seed / Strategic';
 

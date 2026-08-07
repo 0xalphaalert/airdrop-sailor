@@ -177,7 +177,7 @@ export default function Manageas() {
     if (activeTab === 'projects') {
       prompt = `Analyze the following crypto project deeply.\nFocus ONLY on:\n* Funding strength\n* Investors quality\n* Founder credibility\n* Social signals\n* Airdrop signals\n* Token status\n* Product tracking behavior\n* Competition\n\nProject Data:\nName: ${formData.name || ''}\nFunding: ${formData.funding || ''}\nInvestors: ${formData.lead_investors || ''}\nTwitter: ${formData.x_link || ''}\nDescription: ${formData.description || ''}\n\n---\nReturn ONLY JSON matching your required schema.`;
     } else if (activeTab === 'fundraising') {
-      prompt = `Analyze the following funded crypto project deeply.\n\nProject Data:\nName: ${formData.project_name || ''}\nFunding: ${formData.funding_amount || ''}\nRound: ${formData.round || ''}\nInvestors: ${formData.lead_investor || ''}\nCategory: ${formData.category || ''}\n\n---\nReturn ONLY a raw JSON object with this exact schema (no markdown, no code blocks):\n{\n  "summary": "A punchy, 2-sentence bio of the project and what they are building.",\n  "early_tasks": [\n    { "task_name": "Name of early task (e.g. Join Discord)", "link": "https://link-to-task" }\n  ],\n  "analysis": "Your deep analysis on funding strength, founder credibility, and airdrop potential."\n}`;
+      prompt = `Analyze the following funded crypto project deeply.\n\nProject Data:\nName: ${formData.project_name || ''}\nFunding: ${formData.funding_amount || ''}\nRound: ${formData.round || ''}\nInvestors: ${formData.lead_investor || ''}\nCategory: ${formData.category || ''}\n\n---\nReturn ONLY a raw JSON object with this exact schema (no markdown, no code blocks):\n{\n  "summary": "A punchy, 2-sentence bio of the project and what they are building.",\n  "early_tasks": [\n    { "task_name": "Name of early task (e.g. Join Discord)", "link": "https://link-to-task" }\n  ],\n  "analysis": "Your short 1-2 sentence analysis on funding strength, founder credibility, and airdrop potential."\n}`;
     }
     setGeneratedPrompt(prompt);
   };
@@ -235,7 +235,7 @@ Use this exact structure:
   {
     "name": "Founder Name",
     "role": "CEO / Co-founder / CTO",
-    "background": "Brief 1-sentence history (e.g., Ex-Binance, Stanford CS)",
+    "background": "Ultra-short background, maximum 4 to 7 words (e.g., Ex-Binance, Stanford CS)",
     "twitter_handle": "exact_handle_without_@",
     "linkedin_url": "https://linkedin.com/in/..."
   }
@@ -371,6 +371,62 @@ Ensure there are a maximum of 5 competitor objects inside the "competitors" arra
     }
   };
 
+  // --- GROQ AI TASK EXTRACTION ---
+  const generateTaskJSON = async (markdown) => {
+    const groqKey = import.meta.env.VITE_GROQ_API_KEY;
+    if (!groqKey) {
+      console.warn("No Groq API key found. Please add VITE_GROQ_API_KEY to your .env");
+      return {};
+    }
+
+    const prompt = `Analyze the following tutorial markdown and extract the information into a strict JSON object. 
+    Do NOT output any markdown formatting, conversational text, or code blocks. Only output the raw JSON.
+
+    MARKDOWN TO ANALYZE:
+    ${markdown}
+
+    REQUIRED JSON SCHEMA:
+    {
+      "headline": "String - Main title or hook of the task",
+      "short_description": "String - Brief 1-2 sentence summary",
+      "image_url": "String - The first image URL found in the markdown (or null)",
+      "steps": [
+        {
+          "action": "String - Step description",
+          "url": "String - The URL for this step (or null)"
+        }
+      ],
+      "key_actions": ["String", "String"],
+      "important_note": "String - Any pro-tips or warnings (or null)",
+      "primary_url": "String - The main overarching URL"
+    }`;
+
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${groqKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          { role: 'system', content: 'You are a strict data extraction AI. You must output in valid JSON format.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.1,
+        response_format: { type: "json_object" }
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      throw new Error(`Groq API Error: ${err}`);
+    }
+
+    const data = await response.json();
+    return JSON.parse(data.choices[0].message.content);
+  };
+
   // CRUD Functions
   const handleDelete = async (id, table) => {
     if (!window.confirm('Are you sure you want to delete this record?')) return;
@@ -445,15 +501,43 @@ Ensure there are a maximum of 5 competitor objects inside the "competitors" arra
         }
 
       } else if (activeTab === 'tasks') {
+        
+        // 1. Automatically generate the post_json if we have markdown
+        let generatedPostJson = {};
+        if (formData.tutorial_markdown && formData.tutorial_markdown.trim() !== '') {
+          try {
+            // Optional: you can add a loading state here if you want the UI button to show "Extracting AI..."
+            generatedPostJson = await generateTaskJSON(formData.tutorial_markdown);
+          } catch (error) {
+            console.error("Failed to generate JSON with Groq:", error);
+            alert("Warning: AI JSON extraction failed. Saving task with empty JSON.");
+          }
+        }
+
+        // 2. Prepare the payload for Supabase
         const taskData = {
-          project_id: formData.project_id || '', name: formData.name || '', recurring: formData.recurring || 'One-time',
-          link: formData.link || '', cost: parseFloat(formData.cost) || 0, time_minutes: parseInt(formData.time_minutes) || 0,
-          end_date: formData.end_date || null, status: formData.status || 'Active', rpc_url: formData.rpc_url || '',
-          contract_address: formData.contract_address || '', tutorial_markdown: formData.tutorial_markdown || '',
-          external_link: formData.external_link || '', source: entryType
+          project_id: formData.project_id || '', 
+          name: formData.name || '', 
+          recurring: formData.recurring || 'One-time',
+          link: formData.link || '', 
+          cost: parseFloat(formData.cost) || 0, 
+          time_minutes: parseInt(formData.time_minutes) || 0,
+          end_date: formData.end_date || null, 
+          status: formData.status || 'Active', 
+          rpc_url: formData.rpc_url || '',
+          contract_address: formData.contract_address || '', 
+          tutorial_markdown: formData.tutorial_markdown || '',
+          post_json: generatedPostJson, // <-- INJECTED GROQ JSON HERE
+          external_link: formData.external_link || '', 
+          source: entryType
         };
-        if (editingItem) result = await supabase.from('tasks').update(taskData).eq('id', editingItem.id);
-        else result = await supabase.from('tasks').insert([taskData]);
+
+        // 3. Save to database
+        if (editingItem) {
+          result = await supabase.from('tasks').update(taskData).eq('id', editingItem.id);
+        } else {
+          result = await supabase.from('tasks').insert([taskData]);
+        }
 
       } else {
         // === 1. SYNC VCs TO PIONEER PROFILES ===

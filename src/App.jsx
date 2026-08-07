@@ -28,7 +28,6 @@ import FundraisingPage from './FundraisingPage';
 import EarlyTasks from './EarlyTasksPage';
 import SubscriptionPage from './SubscriptionPage';
 import ChainsHub from './ChainsHub';
-import Studio from './admin/Studio'; 
 import SybilScanner from './SybilScanner';
 import ExchangeOffers from './ExchangeOffers';
 import ShortTasksFeed from './ShortTasksFeed'; 
@@ -39,7 +38,6 @@ import AdminContentManagerMobile from './mobile/admin/AdminContentManagerMobile'
 import EarlylistMobile from './mobile/admin/EarlylistMobile';
 import TokenGiveawaysMobile from './mobile/admin/TokenGiveawaysMobile';
 import PendingReviewsMobile from './mobile/admin/PendingReviewsMobile';
-import AlphaStudioMobile from './mobile/admin/AlphaStudioMobile';
 import InvestorLogoStudioMobile from './mobile/admin/InvestorLogoStudioMobile';
 import AdminContentManager from './admin/AdminContentManager';
 import Overview from './admin/Overview';
@@ -49,6 +47,18 @@ import AdminExchangeOffers from './admin/ExchangeOffers';
 import TokenGiveaways from './admin/TokenGiveaways';
 import PendingReviews from './admin/PendingReviews';
 import InvestorLogoStudio from './admin/InvestorLogoStudio';
+import StudioConcepts from './admin/StudioConcepts';
+
+// --- ALPHABRAIN STUDIO IMPORTS ---
+import AlphaBrainLayout from './studio/AlphaBrainLayout';
+import Dashboard from './studio/Dashboard';
+import CreatorStudio from './studio/CreatorStudio';
+import Content from './studio/Content';
+import TelegramEngine from './studio/TelegramEngine';
+import XEngine from './studio/XEngine';
+import FarcasterEngine from './studio/FarcasterEngine';
+import BinanceSquareEngine from './studio/BinanceSquareEngine';
+import Settings from './studio/Settings';
 
 // --- NESTED PROFILE COMPONENTS ---
 import ProfileOnchain from './profile/ProfileOnchain';
@@ -57,6 +67,7 @@ import ProfileRoles from './profile/ProfileRoles';
 import OnboardingTour from './components/OnboardingTour';
 import XPLevelsPage from './pages/XPLevelsPage';
 import MarketplacePage from './pages/MarketplacePage';
+import AutoWorker from './pages/AutoWorker';
 
 // 🚀 OLD BEHAVIOR RESTORED: Dynamic Index Route
 const IndexRoute = () => {
@@ -113,7 +124,8 @@ const AppLayout = () => {
     (location.pathname === '/' && !authenticated) ||
     location.pathname === '/scanner' ||
     location.pathname.startsWith('/admin') || // Hides main sidebar for Admin & Studio
-    location.pathname.startsWith('/tracker')  // Hides main sidebar for Tracker App
+    location.pathname.startsWith('/tracker') || // Hides main sidebar for Tracker App
+    location.pathname.startsWith('/studio') // 🚀 ADDED THIS LINE
   );
 
   // 🚀 FIXED: Correctly hides the global top header for Admin and Tracker routes
@@ -121,14 +133,15 @@ const AppLayout = () => {
     !isMobile &&
     !(
     location.pathname.startsWith('/admin') ||
-    location.pathname.startsWith('/tracker')
+    location.pathname.startsWith('/tracker') ||
+    location.pathname.startsWith('/studio') // 🚀 ADDED THIS LINE
   );
 
   return (
     <div className={`h-screen font-sans flex overflow-hidden bg-[#F8FAFC] text-slate-900`}>
       {showSidebar && <Sidebar />}
 
-      <main className={`flex-1 overflow-y-auto flex flex-col relative w-full lg:pt-0 ${location.pathname.startsWith('/admin') ? 'pt-0' : 'pt-16'}`}>
+      <main className={`flex-1 overflow-y-auto flex flex-col relative w-full lg:pt-0 ${(location.pathname.startsWith('/admin') || location.pathname.startsWith('/studio')) ? 'pt-0' : 'pt-16'}`}>
         {showTopHeader && <TopHeader />}
 
         <Routes>
@@ -145,6 +158,22 @@ const AppLayout = () => {
           <Route path="/scanner" element={<SybilScanner />} />
           <Route path="/xp-levels" element={<XPLevelsPage />} />
           <Route path="/marketplace" element={<MarketplacePage />} />
+          <Route path="/concepts" element={<StudioConcepts />} />
+
+          {/* --- 🤖 HIDDEN AUTOMATION ROUTE (Ghost Worker) --- */}
+          <Route path="/auto-worker" element={<AutoWorker />} />
+
+          {/* --- 🚀 NEW ALPHABRAIN STUDIO ENVIRONMENT --- */}
+          <Route path="/studio" element={<AlphaBrainLayout />}>
+            <Route index element={<Dashboard />} />
+            <Route path="create" element={<CreatorStudio />} />
+            <Route path="content" element={<Content />} />
+            <Route path="telegram" element={<TelegramEngine />} />
+            <Route path="x-engine" element={<XEngine />} />
+            <Route path="farcaster" element={<FarcasterEngine />} />
+            <Route path="binance" element={<BinanceSquareEngine />} />
+            <Route path="settings" element={<Settings />} />
+          </Route>
 
           {/* --- ADMIN ENVIRONMENT (Responsive Layout) --- */}
           <Route path="/admin" element={<ProtectedRoute><ResponsiveAdminLayout isMobile={isMobile} /></ProtectedRoute>}>
@@ -155,7 +184,6 @@ const AppLayout = () => {
             <Route path="giveaways" element={isMobile ? <TokenGiveawaysMobile /> : <TokenGiveaways />} />
             <Route path="pioneers" element={isMobile ? <InvestorLogoStudioMobile /> : <InvestorLogoStudio />} />
             <Route path="pendingreviews" element={isMobile ? <PendingReviewsMobile /> : <PendingReviews />} />
-            <Route path="studio" element={isMobile ? <AlphaStudioMobile /> : <Studio />} />
           </Route>
 
           {/* --- PROTECTED USER DASHBOARD --- */}
@@ -202,8 +230,8 @@ const AppLayout = () => {
         </Routes>
       </main>
 
-      {/* Hide the public BottomNavigation when inside the Admin panel */}
-      {isMobile && authenticated && !location.pathname.startsWith('/admin') && <BottomNavigation />}
+      {/* Hide the public BottomNavigation when inside Admin or Studio panels */}
+      {isMobile && authenticated && !location.pathname.startsWith('/admin') && !location.pathname.startsWith('/studio') && <BottomNavigation />}
       
       {authenticated && <OnboardingTour />}
       
