@@ -10,8 +10,8 @@ import { supabase } from '../supabaseClient';
 // Initialize Supabase 2 specifically for the Publishing Engine pipeline
 import { createClient } from '@supabase/supabase-js';
 
-const engineUrl = import.meta.env.VITE_SUPABASE_2_URL;
-const engineKey = import.meta.env.VITE_SUPABASE_2_ANON_KEY;
+const engineUrl = import.meta.env.VITE_SUPABASE_2_URL || "https://lrfjeupbfretcfcnqkjg.supabase.co";
+const engineKey = import.meta.env.VITE_SUPABASE_2_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxyZmpldXBiZnJldGNmY25xa2pnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0MzU0NDIsImV4cCI6MjEwMTAxMTQ0Mn0.K68VdEj839idPdSY9RVOLdH_VnO4JWFIwW0yNIOhxY8";
 const engineClient = createClient(engineUrl, engineKey);
 
 // --- PHASE 2: IMPORT THE REGISTRY ---
