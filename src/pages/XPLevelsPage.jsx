@@ -201,7 +201,10 @@ export default function XPLevelsPage() {
         auth_id: user.id, 
         amount: quest.reward_sail, 
         action_type: 'daily_quest', 
-        reference_id: quest.id 
+        reference_id: quest.id,
+        description: `Completed daily quest: ${quest.title} (+${quest.reward_sail} SAIL)`,
+        project_id: quest.project_id || null,
+        task_id: quest.id
       });
       
       if (ledgerError) throw ledgerError;

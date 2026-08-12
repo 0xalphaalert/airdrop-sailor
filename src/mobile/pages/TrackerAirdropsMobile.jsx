@@ -90,7 +90,7 @@ export default function TrackerAirdropsMobile() {
 
   return (
     <TrackerLayoutMobile>
-      <div className="space-y-5 px-4 pt-2 pb-8">
+      <div className="space-y-5 px-4 pt-0 pb-0">
         
         {/* HEADER */}
         <div className="flex items-center justify-between">
@@ -125,16 +125,16 @@ export default function TrackerAirdropsMobile() {
         )}
 
         {/* TABS (Segmented Control) */}
-        <div className="flex p-1 bg-slate-200/60 rounded-xl">
+        <div className="flex w-full rounded-xl bg-slate-200/60 p-1">
           <button
             onClick={() => setActiveTab('tracked')}
-            className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${activeTab === 'tracked' ? 'bg-white text-violet-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            className={`min-w-0 flex-1 rounded-lg px-2 py-3 text-sm font-bold transition-all ${activeTab === 'tracked' ? 'bg-white text-violet-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
           >
             Tracked ({tracked.length})
           </button>
           <button
             onClick={() => setActiveTab('available')}
-            className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${activeTab === 'available' ? 'bg-white text-violet-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            className={`min-w-0 flex-1 rounded-lg px-2 py-3 text-sm font-bold transition-all ${activeTab === 'available' ? 'bg-white text-violet-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
           >
             Available ({available.length})
           </button>
@@ -218,7 +218,7 @@ function ProjectCard({ project, stats = { total: 0, completed: 0 }, actionLabel,
             </div>
           </div>
           <div className="shrink-0">
-            <ScoreRing score={project.social_score} />
+            <ScoreRing score={project.score_total} />
           </div>
         </div>
       </div>
@@ -239,7 +239,7 @@ function ProjectCard({ project, stats = { total: 0, completed: 0 }, actionLabel,
         type="button" 
         disabled={processing} 
         onClick={onAction} 
-        className={`mt-5 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold active:scale-[0.98] transition-all ${
+        className={`mt-5 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold active:scale-[0.98] transition-all ${
           actionLabel === 'Untrack' 
             ? 'border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100' 
             : 'bg-violet-600 text-white shadow-md shadow-violet-200 hover:bg-violet-700'

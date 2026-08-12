@@ -102,7 +102,7 @@ export default function TrackerDashboardMobile() {
 
   return (
     <TrackerLayoutMobile>
-      <div className="w-full space-y-6 px-4 py-6">
+      <div className="w-full space-y-6 px-4 pt-0 pb-0">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Welcome back, {displayName}! 👋</h1>
           <p className="mt-1 text-sm font-medium text-slate-500">Here's your farming overview and progress.</p>

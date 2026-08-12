@@ -6,7 +6,7 @@ export default function TrackerHeaderMobile({ onOpenSidebar, user }) {
   const initial = displayName.charAt(0).toUpperCase();
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-40 w-full items-center justify-between border-b border-slate-100 bg-white/95 px-4 py-3 backdrop-blur-md flex">
+    <header className="fixed top-0 left-0 right-0 z-40 flex w-full items-center justify-between border-b border-slate-100 bg-white/95 px-4 py-2 backdrop-blur-md">
         <div className="flex min-w-0 items-center gap-2">
           <button
             type="button"

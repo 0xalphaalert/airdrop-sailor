@@ -524,6 +524,7 @@ Ensure there are a maximum of 5 competitor objects inside the "competitors" arra
           time_minutes: parseInt(formData.time_minutes) || 0,
           end_date: formData.end_date || null, 
           status: formData.status || 'Active', 
+          task_category: formData.task_category || null,
           rpc_url: formData.rpc_url || '',
           contract_address: formData.contract_address || '', 
           tutorial_markdown: formData.tutorial_markdown || '',
@@ -626,7 +627,7 @@ Ensure there are a maximum of 5 competitor objects inside the "competitors" arra
 
   const getDefaultFormData = () => {
     if (activeTab === 'projects') return { slug: '', funding: '', lead_investors: '', x_link: '', name: '', logo_url: '', galxe_alias: '', discord_link: '', tier: 'Tier 3', status: 'Waitlist', airdrop_status: 'Unconfirmed', description: '', ai_research_data: '{}', founders_details: '[]', tokenomics_details: '{}', is_public: true };
-    if (activeTab === 'tasks') return { project_id: '', name: '', recurring: 'One-time', link: '', cost: 0, time_minutes: 0, end_date: '', status: 'Active', rpc_url: '', contract_address: '', tutorial_markdown: '', external_link: '' };
+    if (activeTab === 'tasks') return { project_id: '', name: '', recurring: 'One-time', link: '', cost: 0, time_minutes: 0, end_date: '', status: 'Active', task_category: '', rpc_url: '', contract_address: '', tutorial_markdown: '', external_link: '' };
     return { project_name: '', x_link: '', funding_amount: '', round: '', lead_investor: '', category: '', sector: '', project_logo: '', ai_research_data: '{}' };
   };
 
@@ -860,6 +861,7 @@ Ensure there are a maximum of 5 competitor objects inside the "competitors" arra
                         </label>
                         <p className="text-xs text-slate-500 mt-1 ml-7">Uncheck to hide this project from public view</p>
                       </div>
+
                       <div className="md:col-span-2">
                         <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1">Project Description</label>
                         <textarea value={formData.description || ''} onChange={(e) => handleInputChange('description', e.target.value)} rows="2" className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 text-sm text-slate-900 resize-none" placeholder="Short bio..." />
@@ -1103,6 +1105,26 @@ Ensure there are a maximum of 5 competitor objects inside the "competitors" arra
                           <select value={formData.status || 'Active'} onChange={(e) => handleInputChange('status', e.target.value)} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 text-sm font-medium text-slate-700">
                             <option value="Active">Active</option><option value="Ending Soon">Ending Soon</option><option value="High Priority">High Priority</option><option value="Ended">Ended</option>
                           </select>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
+                            Task Category / Milestone
+                          </label>
+                          <select
+                            value={formData.task_category || ''}
+                            onChange={(e) => handleInputChange('task_category', e.target.value)}
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 text-sm font-medium text-slate-700"
+                          >
+                            <option value="">Select a category (Optional)...</option>
+                            <option value="Waitlist">Waitlist</option>
+                            <option value="Testnet Live">Testnet Live</option>
+                            <option value="Mainnet Launched">Mainnet Launched</option>
+                            <option value="Social Quest">Social Quest</option>
+                            <option value="Airdrop Live">Airdrop Live</option>
+                          </select>
+                          <p className="text-[9px] text-slate-400 mt-1 font-medium">
+                            * Selecting this auto-updates the parent Project's status.
+                          </p>
                         </div>
                         <div className="md:col-span-2 pt-3 border-t border-slate-100 mt-2">
                           <h4 className="text-[11px] font-black text-blue-500 uppercase tracking-widest mb-3 flex items-center gap-1.5"><Search size={12}/> On-Chain Verification</h4>

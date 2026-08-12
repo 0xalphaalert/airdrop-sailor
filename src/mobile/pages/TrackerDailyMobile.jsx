@@ -43,7 +43,7 @@ export default function TrackerDailyMobile() {
 
   return (
     <TrackerLayoutMobile>
-      <div className="space-y-8 px-4 pt-2 pb-8">
+      <div className="space-y-8 px-4 pt-0 pb-0">
         
         {/* --- HEADER & PROGRESS --- */}
         <div>

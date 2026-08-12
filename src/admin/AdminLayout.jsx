@@ -40,9 +40,10 @@ export default function AdminLayout() {
     { id: 'overview', path: '/admin', label: 'Command Center', icon: '🧠' },
     { id: 'manageas', path: '/admin/manage', label: 'Manage Core DB', icon: '⚙️' },
     { id: 'content', path: '/admin/content', label: 'Content Manager', icon: '📝' },
-    { id: 'earlylist', path: '/admin/early', label: 'AI Intelligence', icon: '📡' },
-    { id: 'giveaways', path: '/admin/giveaways', label: 'Token Giveaways', icon: '🎁' },
-    { id: 'pioneers', path: '/admin/pioneers', label: 'Pioneer Studio', icon: '🖼️' },
+    { id: 'earlylist', path: '/admin/early', label: 'VC Profiles', icon: '📡' },
+    { id: 'telegramintel', path: '/admin/telegram-intel', label: 'Telegram Intel', icon: '💬', badge: true },
+    { id: 'datagaps', path: '/admin/data-gaps', label: 'Data Gaps', icon: '🚨' },
+    { id: 'research', path: '/admin/research', label: 'Research Hub', icon: '🔬' },
     { id: 'pendingreviews', path: '/admin/pendingreviews', label: 'Pending Reviews', icon: '📋', badge: true },
   ];
 
@@ -127,7 +128,7 @@ export default function AdminLayout() {
       </aside>
 
       {/* DYNAMIC MAIN CONTENT AREA */}
-      <main className="flex-1 overflow-y-auto relative z-10 p-6 md:p-10 custom-scrollbar">
+      <main className={`flex-1 overflow-y-auto relative z-10 p-6 md:p-10 custom-scrollbar ${location.pathname === '/admin/research' ? 'bg-white' : ''}`}>
         {/* THIS IS WHERE REACT ROUTER INJECTS THE SUB-PAGES */}
         <Outlet /> 
       </main>

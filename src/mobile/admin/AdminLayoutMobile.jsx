@@ -2,18 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { 
   Menu, X, Brain, Database, FileText, 
-  Gift, ClipboardCheck, LogOut, Image, Sparkles, Filter, Save, Trash2, Search, RefreshCw 
+  Gift, ClipboardCheck, LogOut, Sparkles, Filter, Save, Trash2, Search, RefreshCw
 } from 'lucide-react';
 
 
 export default function AdminLayoutMobile() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const location = useLocation();
-
-  // Close the drawer automatically when a navigation link is clicked
-  useEffect(() => {
-    setIsDrawerOpen(false);
-  }, [location.pathname]);
 
   // Lock background scrolling when drawer is open
   useEffect(() => {
@@ -25,14 +20,15 @@ export default function AdminLayoutMobile() {
     return () => { document.body.style.overflow = 'unset'; };
   }, [isDrawerOpen]);
 
-  // Updated to strictly show only your 7 requested pages
+  // Updated to strictly show only the requested admin pages
   const navItems = [
     { name: 'Command Center', path: '/admin', icon: <Brain size={18} /> },
     { name: 'Manage Core DB', path: '/admin/manage', icon: <Database size={18} /> },
     { name: 'Content Manager', path: '/admin/content', icon: <FileText size={18} /> },
     { name: 'AI Intelligence', path: '/admin/early', icon: <Brain size={18} /> },
     { name: 'Token Giveaways', path: '/admin/giveaways', icon: <Gift size={18} /> },
-    { name: 'Pioneer Studio', path: '/admin/pioneers', icon: <Image size={18} /> },
+    { name: 'Data Gaps', path: '/admin/data-gaps', icon: <span className="text-base" aria-hidden="true">🚨</span> },
+    { name: 'Research Hub', path: '/admin/research', icon: <span className="text-base" aria-hidden="true">🔬</span> },
     { name: 'Pending Reviews', path: '/admin/pendingreviews', icon: <ClipboardCheck size={18} /> },
   ];
 
@@ -92,6 +88,8 @@ export default function AdminLayoutMobile() {
             <NavLink
               key={item.name}
               to={item.path}
+              end={item.path === '/admin'}
+              onClick={() => setIsDrawerOpen(false)}
               className={({ isActive }) => `
                 flex items-center gap-3 px-3 py-3 rounded-xl font-bold transition-all text-sm
                 ${isActive 
@@ -115,7 +113,7 @@ export default function AdminLayoutMobile() {
       </nav>
 
       {/* --- MAIN CONTENT OUTLET --- */}
-      <main className="flex-1 flex flex-col relative w-full overflow-x-hidden bg-slate-50/50">
+      <main className={`flex-1 flex flex-col relative w-full overflow-x-hidden ${location.pathname === '/admin/research' ? 'bg-white' : 'bg-slate-50/50'}`}>
         <Outlet />
       </main>
 

@@ -270,15 +270,15 @@ export default function Content() {
     <div className="flex-1 bg-white min-h-screen font-sans">
       
       {/* 1. TOP HEADER */}
-      <div className="flex items-center justify-between px-8 py-6 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-8 py-6 border-b border-slate-200">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Content</h1>
           <p className="text-sm text-slate-500 font-medium mt-1">Manage and track all scheduled and published posts across engines</p>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
           {/* Search */}
-          <div className="relative w-64">
+          <div className="relative w-full sm:w-64">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input 
               type="text" 
@@ -294,7 +294,7 @@ export default function Content() {
             <select
               value={selectedPlatformFilter}
               onChange={(e) => { setSelectedPlatformFilter(e.target.value); setCurrentPage(1); }}
-              className="appearance-none flex items-center gap-2 pl-4 pr-9 py-2 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors cursor-pointer outline-none"
+              className="appearance-none flex items-center gap-2 pl-4 pr-9 py-2 w-full sm:w-64 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors cursor-pointer outline-none"
             >
               <option value="All">All Platforms</option>
               <option value="telegram">Telegram</option>
@@ -308,7 +308,7 @@ export default function Content() {
           {/* New Content Button -> Opens Modal */}
           <button 
             onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors shadow-sm cursor-pointer"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors shadow-sm cursor-pointer sm:w-auto"
           >
             <Plus size={16} /> New Content
           </button>

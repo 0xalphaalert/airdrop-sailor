@@ -8,9 +8,10 @@ export default defineConfig({
     
     VitePWA({
       registerType: 'autoUpdate',
-      // 🚀 1. ADD THIS BLOCK TO ENABLE PWA ON LOCALHOST:5173
+      // Keep the development server on the live Vite module graph. A development
+      // service worker can otherwise keep serving an older admin route bundle.
       devOptions: {
-        enabled: true
+        enabled: false
       },
       workbox: {
         maximumFileSizeToCacheInBytes: 5000000, 

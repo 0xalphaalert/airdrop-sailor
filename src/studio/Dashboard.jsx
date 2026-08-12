@@ -39,10 +39,10 @@ export default function Dashboard() {
       </div>
 
       {/* 2. MIDDLE CHARTS ROW */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-w-0">
         
         {/* Line Chart Placeholder */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm min-w-0">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-sm font-bold text-slate-800">Content Performance</h3>
             <select className="text-xs border border-slate-200 rounded-lg px-2 py-1 outline-none text-slate-600 font-bold bg-slate-50"><option>Views</option></select>
@@ -67,7 +67,7 @@ export default function Dashboard() {
         </div>
 
         {/* Donut Chart Placeholder */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm min-w-0">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-sm font-bold text-slate-800">Content by Category</h3>
             <select className="text-xs border border-slate-200 rounded-lg px-2 py-1 outline-none text-slate-600 font-bold bg-slate-50"><option>This Week</option></select>
@@ -97,7 +97,7 @@ export default function Dashboard() {
         </div>
 
         {/* Publishing Overview */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col gap-4">
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col gap-4 min-w-0">
           <div className="flex justify-between items-center mb-2">
             <h3 className="text-sm font-bold text-slate-800">Publishing Overview</h3>
             <select className="text-xs border border-slate-200 rounded-lg px-2 py-1 outline-none text-slate-600 font-bold bg-slate-50"><option>This Week</option></select>
@@ -179,7 +179,8 @@ export default function Dashboard() {
             <h3 className="text-sm font-bold text-slate-800">Top Performing Templates</h3>
             <select className="text-xs border border-slate-200 rounded-lg px-2 py-1 outline-none text-slate-600 font-bold bg-slate-50"><option>This Week</option></select>
           </div>
-          <div className="flex-1">
+          <div className="flex-1 overflow-x-auto">
+            <div className="min-w-[560px]">
             <div className="grid grid-cols-12 gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-4 pb-2 border-b border-slate-100">
               <div className="col-span-5">Template</div><div className="col-span-3 text-center">Category</div><div className="col-span-2 text-right">Views</div><div className="col-span-2 text-right">Eng.</div>
             </div>
@@ -198,6 +199,7 @@ export default function Dashboard() {
                   <div className="col-span-2 text-right text-xs font-bold text-slate-800">{t.e}</div>
                 </div>
               ))}
+            </div>
             </div>
           </div>
           <button className="w-full text-xs font-bold text-blue-600 pt-4 mt-2 border-t border-slate-100 hover:underline">View All Templates →</button>

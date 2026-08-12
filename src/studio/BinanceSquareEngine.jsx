@@ -52,7 +52,7 @@ export default function BinanceSquareEngine() {
       </div>
 
       {/* 2. KPI METRICS GRID (7 columns) */}
-      <div className="grid grid-cols-7 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-4 mb-6">
         <MetricCard 
           title="Followers" icon={Users} iconColor="text-amber-500" bg="bg-amber-50"
           value="1,235" change="41 Today" changeType="up"
@@ -98,10 +98,10 @@ export default function BinanceSquareEngine() {
       </div>
 
       {/* 3. CHARTS & SUMMARY ROW */}
-      <div className="grid grid-cols-4 gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
         
         {/* PERFORMANCE OVERVIEW CHART (Col-span-2) */}
-        <div className="col-span-2 border border-slate-200 rounded-xl p-5 shadow-sm bg-white">
+        <div className="lg:col-span-2 border border-slate-200 rounded-xl p-5 shadow-sm bg-white min-w-0">
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center gap-2">
               <h2 className="text-[15px] font-bold text-slate-900 tracking-tight">Performance Overview</h2>
@@ -236,15 +236,16 @@ export default function BinanceSquareEngine() {
       </div>
 
       {/* 4. TABLES & AUDIENCE ROW */}
-      <div className="grid grid-cols-5 gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
         
         {/* RECENT ARTICLES (Col-span-2) */}
-        <div className="col-span-2 border border-slate-200 rounded-xl p-5 shadow-sm bg-white flex flex-col">
+        <div className="lg:col-span-2 border border-slate-200 rounded-xl p-5 shadow-sm bg-white flex flex-col min-w-0">
           <div className="flex justify-between items-center mb-5">
             <h2 className="text-[15px] font-bold text-slate-900 tracking-tight">Recent Articles</h2>
             <button className="text-[12px] font-semibold text-blue-600 hover:text-blue-700">View all</button>
           </div>
-          <table className="w-full text-left">
+          <div className="w-full overflow-x-auto scrollbar-hide">
+          <table className="w-full min-w-[760px] text-left">
             <thead>
               <tr className="border-b border-slate-100 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                 <th className="pb-3 w-[45%]">Article</th>
@@ -264,6 +265,7 @@ export default function BinanceSquareEngine() {
               <ArticleRow title="Discord Roles Available" date="Jul 22, 2026 06:40 PM" views="980" likes="142" comments="28" bg="bg-purple-600" />
             </tbody>
           </table>
+          </div>
           <div className="mt-4 pt-4 border-t border-slate-100">
              <button className="w-full flex items-center justify-center py-2 border border-slate-200 text-blue-600 rounded-lg text-[13px] font-semibold hover:bg-slate-50 transition-colors">
                View all articles
@@ -272,12 +274,13 @@ export default function BinanceSquareEngine() {
         </div>
 
         {/* TOP PERFORMING ARTICLES (Col-span-2) */}
-        <div className="col-span-2 border border-slate-200 rounded-xl p-5 shadow-sm bg-white">
+        <div className="lg:col-span-2 border border-slate-200 rounded-xl p-5 shadow-sm bg-white min-w-0">
           <div className="flex justify-between items-center mb-5">
             <h2 className="text-[15px] font-bold text-slate-900 tracking-tight">Top Performing Articles</h2>
             <button className="text-[12px] font-semibold text-blue-600 hover:text-blue-700">View all</button>
           </div>
-          <table className="w-full text-left">
+          <div className="w-full overflow-x-auto scrollbar-hide">
+          <table className="w-full min-w-[620px] text-left">
             <thead>
               <tr className="border-b border-slate-100 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                 <th className="pb-3 w-8">#</th>
@@ -295,10 +298,11 @@ export default function BinanceSquareEngine() {
               <TopArticleRow num="5" title="Tokenomics Breakdown" views="920" eng="176" rate="19.1%" bg="bg-amber-100" />
             </tbody>
           </table>
+          </div>
         </div>
 
         {/* AUDIENCE INSIGHTS (Col-span-1) */}
-        <div className="col-span-1 border border-slate-200 rounded-xl p-5 shadow-sm bg-white">
+        <div className="lg:col-span-1 border border-slate-200 rounded-xl p-5 shadow-sm bg-white min-w-0">
           <h2 className="text-[15px] font-bold text-slate-900 tracking-tight mb-6">Audience Insights</h2>
           <div className="space-y-6">
             <InsightRow icon={Globe} label="Top Countries" value="India (38%)" iconColor="text-amber-500" />
@@ -312,10 +316,10 @@ export default function BinanceSquareEngine() {
       </div>
 
       {/* 5. BOTTOM ROW (Engagement + AI Insights) */}
-      <div className="grid grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         
         {/* ENGAGEMENT OVERVIEW (Col-span-3) */}
-        <div className="col-span-3 border border-slate-200 rounded-xl p-5 shadow-sm bg-white">
+        <div className="lg:col-span-3 border border-slate-200 rounded-xl p-5 shadow-sm bg-white min-w-0">
           <div className="flex items-center gap-2 mb-6">
             <h2 className="text-[15px] font-bold text-slate-900 tracking-tight">Engagement Overview</h2>
             <Info size={14} className="text-slate-400" />
@@ -341,7 +345,7 @@ export default function BinanceSquareEngine() {
         </div>
 
         {/* AI INSIGHTS (Col-span-2) */}
-        <div className="col-span-2 border border-slate-200 rounded-xl p-6 shadow-sm bg-white flex flex-col justify-center">
+        <div className="lg:col-span-2 border border-slate-200 rounded-xl p-6 shadow-sm bg-white flex flex-col justify-center min-w-0">
           <div className="flex items-center gap-2 text-slate-900 mb-5">
             <Sparkles size={18} className="text-amber-500" />
             <span className="text-[14px] font-bold">AI Insights</span>

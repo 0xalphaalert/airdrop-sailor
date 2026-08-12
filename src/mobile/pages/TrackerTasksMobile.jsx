@@ -29,7 +29,7 @@ export default function TrackerTasksMobile() {
 
   return (
     <TrackerLayoutMobile>
-      <div className="px-4 pt-2 pb-8 relative">
+      <div className="relative px-4 pt-0 pb-0">
         
         {/* 
           FIXED: 

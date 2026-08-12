@@ -38,7 +38,6 @@ import AdminContentManagerMobile from './mobile/admin/AdminContentManagerMobile'
 import EarlylistMobile from './mobile/admin/EarlylistMobile';
 import TokenGiveawaysMobile from './mobile/admin/TokenGiveawaysMobile';
 import PendingReviewsMobile from './mobile/admin/PendingReviewsMobile';
-import InvestorLogoStudioMobile from './mobile/admin/InvestorLogoStudioMobile';
 import AdminContentManager from './admin/AdminContentManager';
 import Overview from './admin/Overview';
 import Manageas from './admin/Manageas';
@@ -46,16 +45,13 @@ import Earlylist from './admin/Earlylist';
 import AdminExchangeOffers from './admin/ExchangeOffers';
 import TokenGiveaways from './admin/TokenGiveaways';
 import PendingReviews from './admin/PendingReviews';
-import InvestorLogoStudio from './admin/InvestorLogoStudio';
-import StudioConcepts from './admin/StudioConcepts';
+import TelegramIntel from './admin/TelegramIntel';
 
 // --- ALPHABRAIN STUDIO IMPORTS ---
 import AlphaBrainLayout from './studio/AlphaBrainLayout';
 import Dashboard from './studio/Dashboard';
 import CreatorStudio from './studio/CreatorStudio';
 import Content from './studio/Content';
-import TelegramEngine from './studio/TelegramEngine';
-import XEngine from './studio/XEngine';
 import FarcasterEngine from './studio/FarcasterEngine';
 import BinanceSquareEngine from './studio/BinanceSquareEngine';
 import Settings from './studio/Settings';
@@ -68,6 +64,8 @@ import OnboardingTour from './components/OnboardingTour';
 import XPLevelsPage from './pages/XPLevelsPage';
 import MarketplacePage from './pages/MarketplacePage';
 import AutoWorker from './pages/AutoWorker';
+import ProjectResearchHub from './pages/admin/ProjectResearchHub';
+import DataGapsStudio from './admin/DataGapsStudio';
 
 // 🚀 OLD BEHAVIOR RESTORED: Dynamic Index Route
 const IndexRoute = () => {
@@ -158,18 +156,15 @@ const AppLayout = () => {
           <Route path="/scanner" element={<SybilScanner />} />
           <Route path="/xp-levels" element={<XPLevelsPage />} />
           <Route path="/marketplace" element={<MarketplacePage />} />
-          <Route path="/concepts" element={<StudioConcepts />} />
 
           {/* --- 🤖 HIDDEN AUTOMATION ROUTE (Ghost Worker) --- */}
           <Route path="/auto-worker" element={<AutoWorker />} />
 
           {/* --- 🚀 NEW ALPHABRAIN STUDIO ENVIRONMENT --- */}
-          <Route path="/studio" element={<AlphaBrainLayout />}>
+          <Route path="/studio" element={<ProtectedRoute><AlphaBrainLayout /></ProtectedRoute>}>
             <Route index element={<Dashboard />} />
             <Route path="create" element={<CreatorStudio />} />
             <Route path="content" element={<Content />} />
-            <Route path="telegram" element={<TelegramEngine />} />
-            <Route path="x-engine" element={<XEngine />} />
             <Route path="farcaster" element={<FarcasterEngine />} />
             <Route path="binance" element={<BinanceSquareEngine />} />
             <Route path="settings" element={<Settings />} />
@@ -182,7 +177,9 @@ const AppLayout = () => {
             <Route path="content" element={isMobile ? <AdminContentManagerMobile /> : <AdminContentManager />} />
             <Route path="early" element={isMobile ? <EarlylistMobile /> : <Earlylist />} />
             <Route path="giveaways" element={isMobile ? <TokenGiveawaysMobile /> : <TokenGiveaways />} />
-            <Route path="pioneers" element={isMobile ? <InvestorLogoStudioMobile /> : <InvestorLogoStudio />} />
+            <Route path="telegram-intel" element={<TelegramIntel />} />
+            <Route path="data-gaps" element={<DataGapsStudio />} />
+            <Route path="research" element={<ProjectResearchHub />} />
             <Route path="pendingreviews" element={isMobile ? <PendingReviewsMobile /> : <PendingReviews />} />
           </Route>
 

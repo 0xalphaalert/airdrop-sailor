@@ -1293,7 +1293,8 @@ export default function CreatorStudio() {
     <div className="p-6 max-w-[1600px] mx-auto space-y-6 bg-[#F8FAFC] min-h-full">
       
       {/* 1. TOP PROGRESS BAR */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+      <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center justify-between overflow-x-auto">
+        <div className="flex items-center justify-between min-w-[720px] w-full">
         {[
           { step: 1, title: 'Select Source', sub: 'Choose your data', active: true, completed: true },
           { step: 2, title: 'Choose Template', sub: 'Pick a design template', active: true, completed: true },
@@ -1319,12 +1320,13 @@ export default function CreatorStudio() {
             )}
           </React.Fragment>
         ))}
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start min-w-0">
         
         {/* COLUMN 1: SELECT SOURCE */}
-        <div className="lg:col-span-3 bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col min-h-[600px] h-[calc(100vh-180px)] min-w-0">
+        <div className="lg:col-span-3 bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col min-h-[420px] lg:min-h-[600px] h-auto lg:h-[calc(100vh-180px)] min-w-0">
           <div className="p-4 border-b border-slate-100 shrink-0">
             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">1. Select Source</h3>
             
@@ -1447,7 +1449,7 @@ export default function CreatorStudio() {
               <h3 className="text-[10px] font-black text-blue-600 uppercase tracking-widest">3. Live Preview</h3>
             </div>
             
-            <div ref={containerRef} className="flex-1 bg-slate-100 overflow-hidden relative flex items-center justify-center p-4 min-h-[400px] w-full">
+            <div ref={containerRef} className="flex-1 bg-slate-100 overflow-hidden relative flex items-center justify-center p-4 min-h-[300px] sm:min-h-[400px] w-full max-w-full">
                <div className="absolute origin-center shadow-2xl rounded-2xl overflow-hidden ring-1 ring-slate-900/10 bg-white" style={{ width: '1200px', height: '675px', transform: `scale(${previewScale})` }}>
                  <div ref={canvasRef} className="w-full h-full relative overflow-hidden bg-white">
                    {ActiveCanvasComponent ? (
@@ -1513,7 +1515,7 @@ export default function CreatorStudio() {
         </div>
 
         {/* COLUMN 3: AI CONTENT GENERATION */}
-        <div className="lg:col-span-3 bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col h-[calc(100vh-180px)] min-w-0">
+        <div className="lg:col-span-3 bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col h-auto lg:h-[calc(100vh-180px)] min-w-0">
           <div className="p-4 border-b border-slate-100 shrink-0">
             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">4. Content Generation</h3>
             <button onClick={handleGenerateCaptions} className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95">

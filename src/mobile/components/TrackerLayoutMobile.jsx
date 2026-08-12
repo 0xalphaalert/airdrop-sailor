@@ -11,11 +11,11 @@ export default function TrackerLayoutMobile({ children }) {
 
   return (
     <TrackerProvider>
-      <div className="flex flex-col min-h-screen bg-slate-50/50 pt-16 pb-28">
+      <div className="flex min-h-screen flex-col bg-slate-50/50">
         <TrackerSidebarMobile isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
         <TrackerHeaderMobile onOpenSidebar={() => setIsSidebarOpen(true)} />
         
-        <main className="flex-1 w-full relative">
+        <main className="relative w-full flex-1 overflow-x-hidden px-0 pt-14 pb-36">
           {children}
         </main>
 

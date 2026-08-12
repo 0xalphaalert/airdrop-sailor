@@ -564,7 +564,7 @@ export default function FarcasterEngine() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {metricCards.map(({ label, value, display, icon: Icon, series, caption, trend }) => (
           <div key={label} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
             <div className="flex items-center gap-2 mb-3">
@@ -711,7 +711,8 @@ export default function FarcasterEngine() {
           {topPosts.length === 0 ? (
             <div className="text-center py-10 text-slate-400 font-medium text-xs">No casts in this range.</div>
           ) : (
-            <table className="w-full text-left">
+            <div className="w-full overflow-x-auto scrollbar-hide">
+            <table className="w-full min-w-[620px] text-left">
               <thead>
                 <tr className="border-b border-slate-100 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                   <th className="pb-3 w-8">#</th>
@@ -753,6 +754,7 @@ export default function FarcasterEngine() {
                 })}
               </tbody>
             </table>
+            </div>
           )}
         </div>
 

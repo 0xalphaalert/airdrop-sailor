@@ -1,55 +1,67 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
 import {
-  Star,
-  CheckCircle2,
-  Image as ImageIcon,
-  Flame,
-  Calendar,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  SlidersHorizontal,
-  Info,
-  CircleDot,
-  X as XIcon,
-  Circle,
-  Minus,
   ArrowRight,
-  Clock,
-  Award,
-} from "lucide-react";
-import { supabase } from "../supabaseClient";
-import sailorShip from "../assets/sailor-pass-hero.png";
-import { useNavigate } from "react-router-dom";
+  Bell,
+  CalendarDays,
+  Check,
+  ChevronDown,
+  Crown,
+  Image as ImageIcon,
+  Info,
+  Megaphone,
+  Repeat2,
+  SlidersHorizontal,
+  Star,
+  Trophy,
+} from 'lucide-react';
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../supabaseClient';
+import sailorShip from '../assets/sailor-pass-hero.png';
+
+const PIE_COLORS = ['#2563eb', '#6d28d9', '#10b981', '#f59e0b'];
+const MotionDiv = motion.div;
 
 export default function TrackerOverview() {
-
   const [tasks, setTasks] = useState([]);
   const [projects, setProjects] = useState([]);
+  const [globalTopProjects, setGlobalTopProjects] = useState([]);
+  const [ledgerLogs, setLedgerLogs] = useState([]);
+  const [platformUpdates, setPlatformUpdates] = useState([]);
+  const [profileStats, setProfileStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [slideIndex, setSlideIndex] = useState(0);
   const navigate = useNavigate();
-  const [currentPage, setCurrentPage] = useState(1);
-
-  useEffect(() => {
-    fetchOverviewData();
-  }, []);
 
   const fetchOverviewData = async () => {
-
     setLoading(true);
 
     const {
-      data: { user }
+      data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
-    // TRACKED TASKS
-    const {
-      data: trackedTasks,
-      error: taskError
-    } = await supabase
-      .from("tracker_user_tasks")
+    const { data: trackedTasks } = await supabase
+      .from('tracker_user_tasks')
       .select(`
         *,
         tasks (
@@ -65,1430 +77,591 @@ export default function TrackerOverview() {
           social_score
         )
       `)
-      .eq("auth_id", user.id);
+      .eq('auth_id', user.id);
 
-    // TRACKED PROJECTS
-    const {
-      data: trackedProjects,
-      error: projectError
-    } = await supabase
-      .from("tracker_user_projects")
+    const { data: trackedProjects } = await supabase
+      .from('tracker_user_projects')
       .select(`
         *,
         projects (
           id,
           name,
           logo_url,
-          social_score
+          status
         )
       `)
-      .eq("auth_id", user.id);
+      .eq('auth_id', user.id);
 
-    console.log(
-      "OVERVIEW TASKS:",
-      trackedTasks
-    );
+    const { data: profileData } = await supabase
+      .from('user_profiles')
+      .select('project_limit, lifetime_xp, profile_engagement_score, subscription_tier, subscription_expires_at')
+      .eq('auth_id', user.id)
+      .maybeSingle();
 
-    console.log(
-      "OVERVIEW PROJECTS:",
-      trackedProjects
-    );
+    const { data: topJoined } = await supabase.rpc('get_top_joined_projects');
 
-    console.log(
-      "OVERVIEW TASK ERROR:",
-      taskError
-    );
+    const { data: ledgerData } = await supabase
+      .from('xp_ledger')
+      .select('amount, action_type, description, created_at')
+      .eq('auth_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(15);
 
-    console.log(
-      "OVERVIEW PROJECT ERROR:",
-      projectError
-    );
+    const { data: updatesData } = await supabase
+      .from('platform_updates')
+      .select('category, title, category_color, category_bg, link, created_at')
+      .order('created_at', { ascending: false })
+      .limit(15);
 
     setTasks(trackedTasks || []);
     setProjects(trackedProjects || []);
-
+    setGlobalTopProjects(topJoined || []);
+    setLedgerLogs(ledgerData || []);
+    setPlatformUpdates(updatesData || []);
+    setProfileStats(profileData || null);
     setLoading(false);
-
   };
-  const totalXP =
-  tasks.reduce(
-    (sum, t) =>
-      sum + (t.tasks?.xp || 0),
-    0
-  );
 
-const completedTasks =
-  tasks.filter(
-    t => t.last_completed_at
-  );
+  useEffect(() => {
+    // Data fetching updates local state when the external request resolves.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchOverviewData();
+  }, []);
 
-const totalCompleted =
-  completedTasks.length;
+  useEffect(() => {
+    if (ledgerLogs.length <= 5 && platformUpdates.length <= 5) return undefined;
 
-const totalProjects =
-  projects.length;
+    const itemCount = Math.max(ledgerLogs.length, platformUpdates.length);
+    const timer = window.setInterval(() => {
+      setSlideIndex((previousIndex) => (previousIndex + 1) % itemCount);
+    }, 4000);
 
-// STREAK
-const completionDates = [
-  ...new Set(
-    completedTasks.map(t => {
+    return () => window.clearInterval(timer);
+  }, [ledgerLogs.length, platformUpdates.length]);
 
-      const d =
-        new Date(t.last_completed_at);
+  const getVisibleItems = (items) => {
+    if (!items.length) return [];
 
-      return d.toDateString();
+    return Array.from(
+      { length: Math.min(5, items.length) },
+      (_, index) => items[(slideIndex + index) % items.length],
+    );
+  };
 
-    })
-  )
-];
+  const visibleLedger = getVisibleItems(ledgerLogs);
+  const visibleUpdates = getVisibleItems(platformUpdates);
 
-let streak = 0;
+  const totalXP = tasks.reduce((sum, task) => sum + (Number(task.tasks?.xp) || 0), 0);
+  const completedTasks = tasks.filter((task) => task.last_completed_at);
+  const totalCompleted = completedTasks.length;
+  const totalProjects = projects.length;
+  const engagementScore = Number(profileStats?.profile_engagement_score) || 0;
 
-for (let i = 0; i < 365; i++) {
-
-  const d = new Date();
-
-  d.setDate(d.getDate() - i);
-
-  const dateStr =
-    d.toDateString();
-
-  if (
-    completionDates.includes(dateStr)
-  ) {
-
-    streak++;
-
-  } else {
-
-    break;
-
+  const weeklyAnalytics = [];
+  for (let i = 6; i >= 0; i -= 1) {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+    const value = completedTasks.filter((task) => (
+      new Date(task.last_completed_at).toDateString() === date.toDateString()
+    )).length;
+    weeklyAnalytics.push({
+      label: date.toLocaleDateString('en-US', { weekday: 'short' }),
+      value,
+    });
   }
 
-}
+  const dailyTaskItems = tasks.filter((task) => task.custom_interval === '24h');
+  const dailyTasks = dailyTaskItems.length;
+  const completedDailyTasks = dailyTaskItems.filter((task) => task.last_completed_at).length;
+  const weeklyTasks = tasks.filter((task) => task.custom_interval === '7d').length;
+  const monthlyTasks = tasks.filter((task) => task.custom_interval === '30d').length;
+  const oneTimeTasks = tasks.filter((task) => task.custom_interval === 'once').length;
+  const totalTaskBreakdown = dailyTasks + weeklyTasks + monthlyTasks + oneTimeTasks;
 
-const dailyStreak = streak;
-const weeklyAnalytics = [];
-
-for (let i = 6; i >= 0; i--) {
-
-  const d = new Date();
-
-  d.setDate(d.getDate() - i);
-
-  const label =
-    d.toLocaleDateString(
-      'en-US',
-      { weekday: 'short' }
-    );
-
-  const completedCount =
-    completedTasks.filter(task => {
-
-      if (!task.last_completed_at)
-        return false;
-
-      const completed =
-        new Date(task.last_completed_at);
-
-      return (
-        completed.toDateString() ===
-        d.toDateString()
-      );
-
-    }).length;
-
-  weeklyAnalytics.push({
-
-    label,
-    value: completedCount
-
-  });
-
-}
-
-const maxGraphValue =
-
-  Math.max(
-    ...weeklyAnalytics.map(d => d.value),
-    1
-  );
-  // TASK COMPLETION ANALYTICS
-
-const dailyTasks =
-  tasks.filter(
-    t => t.custom_interval === "24h"
-  ).length;
-
-const weeklyTasks =
-  tasks.filter(
-    t => t.custom_interval === "7d"
-  ).length;
-
-const monthlyTasks =
-  tasks.filter(
-    t => t.custom_interval === "30d"
-  ).length;
-
-const oneTimeTasks =
-  tasks.filter(
-    t => t.custom_interval === "once"
-  ).length;
-
-const totalTaskBreakdown =
-  dailyTasks +
-  weeklyTasks +
-  monthlyTasks +
-  oneTimeTasks;
-
-const completionRate =
-
-
-  tasks.length > 0
-    ? Math.round(
-        (
-          completedTasks.length /
-          tasks.length
-        ) * 100
-      )
-    : 0;
-    // WEEKLY PROGRESS
-
-const completedXP =
-  completedTasks.reduce(
-    (sum, t) =>
-      sum + (t.tasks?.xp || 0),
-    0
-  );
-
-const xpProgress =
-
-  totalXP > 0
-    ? Math.round(
-        (completedXP / totalXP) * 100
-      )
-    : 0;
-
-const taskProgress =
-
-  tasks.length > 0
-    ? Math.round(
-        (
-          completedTasks.length /
-          tasks.length
-        ) * 100
-      )
-    : 0;
-    // UPCOMING TASKS
-
-const upcomingTasks =
-  [...tasks]
-
-    .filter(task => {
-
-      if (!task.next_due_time)
-        return false;
-
-      return (
-        new Date(task.next_due_time)
-        > new Date()
-      );
-
-    })
-
-    .sort(
-      (a, b) =>
-        new Date(a.next_due_time)
-        -
-        new Date(b.next_due_time)
-    )
-
-    .slice(0, 5);
-    // PORTFOLIO ANALYTICS
-
-const portfolioProjects =
-  projects.map(project => {
-
-    const projectTasks =
-      tasks.filter(
-        t =>
-          t.project_id ===
-          project.project_id
-      );
-
-    const completed =
-      projectTasks.filter(
-        t => t.last_completed_at
-      ).length;
-
-    const total =
-      projectTasks.length;
-
-    const pct =
-      total > 0
-        ? Math.round(
-            (completed / total) * 100
-          )
-        : 0;
-
-    const xp =
-      projectTasks.reduce(
-        (sum, t) =>
-          sum + (t.tasks?.xp || 0),
-        0
-      );
+  const portfolioProjects = projects.map((project) => {
+    const projectTasks = tasks.filter((task) => task.project_id === project.project_id);
+    const done = projectTasks.filter((task) => task.last_completed_at).length;
+    const total = projectTasks.length;
 
     return {
-
-      id:
-        project.project_id,
-
-      name:
-        project.projects?.name,
-
-      logo:
-        project.projects?.logo_url,
-
-      score:
-        project.projects?.social_score || 0,
-
-      done:
-        completed,
-
+      id: project.project_id,
+      name: project.projects?.name || 'Unnamed project',
+      logo: project.projects?.logo_url,
+      score: Number(project.engagement_score) || 0,
+      xp: Number(project.total_xp_gained) || 0,
+      done,
       total,
-
-      pct,
-
-      xp
-
+      pct: total > 0 ? Math.round((done / total) * 100) : 0,
+      status: project.projects?.status || 'Active',
     };
-
   });
-    const formatDueTime = (date) => {
 
-  const now = new Date();
+  const topProjects = [...portfolioProjects].sort((left, right) => right.xp - left.xp).slice(0, 5);
+  const needsEffortProjects = [...projects]
+    .sort((a, b) => (Number(a.engagement_score) || 0) - (Number(b.engagement_score) || 0))
+    .slice(0, 5);
+  const performanceData = topProjects.map((project) => ({
+    name: project.name,
+    completion: project.pct,
+    xp: project.xp,
+  }));
+  const pieData = [
+    { name: 'Daily Tasks', value: dailyTasks },
+    { name: 'Weekly Tasks', value: weeklyTasks },
+    { name: 'Monthly Tasks', value: monthlyTasks },
+    { name: 'One-time Tasks', value: oneTimeTasks },
+  ];
+  const projectLimit = profileStats?.project_limit || 5;
+  const lifetimeXP = Number(profileStats?.lifetime_xp) || 0;
+  const planName = profileStats?.subscription_tier || 'Free Plan';
+  const isPremium = planName !== 'Free Plan' && planName !== 'Free';
+  const expiryDate = profileStats?.subscription_expires_at
+    ? new Date(profileStats.subscription_expires_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    : '-';
 
-  const due =
-    new Date(date);
-
-  const diff =
-    due - now;
-
-  const mins =
-    Math.floor(diff / 60000);
-
-  const hours =
-    Math.floor(mins / 60);
-
-  const days =
-    Math.floor(hours / 24);
-
-  if (mins < 60)
-    return `Due in ${mins}m`;
-
-  if (hours < 24)
-    return `Due in ${hours}h`;
-
-  return `Due in ${days}d`;
-
-};
+  if (loading) {
+    return <div className="grid min-h-[70vh] place-items-center bg-white text-sm font-semibold text-slate-400">Loading your tracker overview...</div>;
+  }
 
   return (
-    <div className="w-full flex flex-col pb-8">
-      <div className="max-w-[1500px] mx-auto px-6 lg:px-8 py-6 lg:py-8 space-y-6 w-full">
-        
-        {/* ─── GREETING & CONTROLS ─── */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+    <div className="w-full bg-white pb-8 text-slate-900">
+      <div className="mx-auto w-full max-w-[1500px] space-y-5 px-4 py-6 sm:px-6 lg:px-8 lg:py-7">
+        <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-              Welcome back, Sailor! <span>👋</span>
-            </h1>
-            <p className="text-sm font-medium text-slate-500 mt-1">Here's your farming overview and progress.</p>
+            <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight text-slate-900">Welcome back, Sailor! <span>👋</span></h1>
+            <p className="mt-1 text-sm font-medium text-slate-500">Track smarter, farm better, earn more SAIL.</p>
           </div>
-          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-            <button className="h-10 px-3.5 rounded-lg border border-slate-200 bg-white text-sm font-bold text-slate-700 flex items-center gap-2 hover:bg-slate-50 shadow-sm transition-colors flex-grow md:flex-grow-0 justify-center">
-              <Calendar className="h-4 w-4 text-slate-500" />
-              Last 7 Days
-              <ChevronDown className="h-4 w-4 text-slate-400 ml-1" />
-            </button>
-            <button className="h-10 px-4 rounded-lg border border-slate-200 bg-white text-sm font-bold text-slate-700 flex items-center gap-2 hover:bg-slate-50 shadow-sm transition-colors flex-grow md:flex-grow-0 justify-center">
-              <SlidersHorizontal className="h-4 w-4 text-slate-500" />
-              Customize
+          <div className="flex w-full flex-wrap items-center gap-3 md:w-auto">
+            <Dropdown label="This Month" icon={CalendarDays} />
+            <button type="button" className="flex h-10 flex-grow items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 md:flex-grow-0">
+              <SlidersHorizontal className="h-4 w-4 text-slate-500" /> Customize
             </button>
           </div>
         </div>
 
-        {/* ─── TOP STATS ROW (5 Columns) ─── */}
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
-          <StatCard icon={<Star className="h-5 w-5 text-blue-600" />} iconBg="bg-blue-50 border-blue-100" label="Total XP" value={totalXP} unit="XP" sub="↑ 18.6% from last 7 days" />
-          <StatCard icon={<CheckCircle2 className="h-5 w-5 text-emerald-600" />} iconBg="bg-emerald-50 border-emerald-100" label="Tasks Completed" value={totalCompleted} sub="↑ 12.4% from last 7 days" />
-          <StatCard icon={<ImageIcon className="h-5 w-5 text-purple-600" />} iconBg="bg-purple-50 border-purple-100" label="Projects Tracked" value={totalProjects} sub="↑ 9.1% from last 7 days" />
-          <StatCard icon={<Flame className="h-5 w-5 text-orange-500" />} iconBg="bg-orange-50 border-orange-100" label="Daily Streak" value={dailyStreak} unit="days" sub="Best: 14 days" subColor="text-slate-500" />
-          <div className="relative overflow-hidden rounded-xl border border-blue-200 bg-gradient-to-br from-blue-600 via-sky-500 to-cyan-400 p-5 shadow-sm hover:shadow-md transition-all min-h-[140px]">
-
-  {/* Glow */}
-  <div className="absolute -top-10 -right-10 w-28 h-28 bg-white/10 rounded-full blur-2xl" />
-
-  <div className="relative z-10 h-full flex flex-col justify-between">
-
-    {/* TOP */}
-    <div className="flex items-center justify-between">
-
-      <div className="h-10 w-10 rounded-xl bg-white/15 border border-white/20 flex items-center justify-center backdrop-blur-sm shadow-sm">
-        <img
-          src="https://cdn.simpleicons.org/telegram/ffffff"
-          alt="Telegram"
-          className="w-5 h-5"
-        />
-      </div>
-
-      <span className="text-[9px] font-black uppercase tracking-widest text-white/80 bg-white/10 px-2 py-1 rounded-md border border-white/10">
-        Live
-      </span>
-
-    </div>
-
-    {/* CONTENT */}
-    <div className="mt-4">
-
-      <div className="text-lg font-black text-white leading-none">
-        Join Telegram
-      </div>
-
-      <div className="text-[10px] font-bold uppercase tracking-widest text-white/80 mt-2">
-        Instant task alerts
-      </div>
-
-    </div>
-
-    {/* BUTTON */}
-    <a
-      href="https://t.me/airdropsailor"
-      target="_blank"
-      rel="noopener noreferrer"
-      className="mt-4 h-9 rounded-lg bg-white text-blue-700 text-[11px] font-black flex items-center justify-center hover:bg-blue-50 transition-colors shadow-sm"
-    >
-      Join Community
-    </a>
-
-  </div>
-
-</div>
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
+          <CircularStatCard label="Projects Joined" current={totalProjects} max={projectLimit} format="fraction" />
+          <CircularStatCard label="Tasks Completed" current={totalCompleted} max={tasks.length} format="fraction" />
+          <CircularStatCard label="Daily Tasks" current={completedDailyTasks} max={dailyTasks} format="fraction" />
+          <CircularStatCard label="Engagement Score" current={engagementScore} max={100} format="percent" />
+          <CircularStatCard label="SAIL Earned" current={lifetimeXP} max={lifetimeXP} format="raw" />
+          <CircularStatCard label="$1 / Mo Premium" isUpgrade onClick={() => navigate('/subscription')} />
         </div>
 
-        {/* ─── MIDDLE ROW (Charts & Upcoming) ─── */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          
-          {/* XP Overview Chart */}
-          <div className="lg:col-span-5 rounded-xl border border-slate-200 bg-white p-5 md:p-6 shadow-sm flex flex-col">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <h3 className="font-bold text-slate-900 tracking-tight">Productivity Overview</h3>
-                <Info className="h-4 w-4 text-slate-400" />
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+          <div className="flex flex-col gap-4 lg:col-span-8">
+            <Card>
+              <div className="flex items-center justify-between gap-4">
+                <div><h2 className="text-sm font-bold text-slate-900">Tracking Limit (Free Plan)</h2><p className="mt-1 text-xs font-medium text-slate-500">You can track {Math.max(0, projectLimit - totalProjects)} more projects</p></div>
+                <span className="text-xs font-black text-slate-700">{totalProjects} / {projectLimit} Projects</span>
               </div>
-              <button className="h-8 px-2.5 rounded-md border border-slate-200 text-xs font-bold text-slate-600 flex items-center gap-1.5 hover:bg-slate-50">
-                Last 7 Days <ChevronDown className="h-3 w-3 text-slate-400" />
-              </button>
-            </div>
-            
-            <div className="flex-1 w-full overflow-hidden flex items-end relative min-h-[280px] mb-4">
-  <XPChart
-    weeklyAnalytics={weeklyAnalytics}
-    maxGraphValue={maxGraphValue}
-  />
-</div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-auto pt-4 border-t border-slate-100">
-              <div>
-  <div className="text-sm font-black text-slate-900">
-    {completedTasks.length}
-    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">
-      Tasks
-    </span>
-  </div>
-
-  <div className="text-xs font-medium text-slate-500 mt-0.5">
-    Completed Tasks
-  </div>
-</div>
-              <div>
-                <div className="text-sm font-black text-slate-900">{
-  Math.round(
-    completedTasks.length / 7
-  )
-} <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Task</span></div>
-                <div className="text-xs font-medium text-slate-500 mt-0.5">Avg Daily Tasks</div>
-              </div>
-              <div>
-                <div className="text-sm font-black text-emerald-600">{
-  totalCompleted > 0
-    ? `${Math.round(
-        (completedTasks.length / tasks.length) * 100
-      )}%`
-    : "0%"
-}</div>
-                <div className="text-xs font-medium text-slate-500 mt-0.5">Completion Rate</div>
-              </div>
-              <div>
-                <div className="text-sm font-black text-slate-900">{
-  Math.max(
-    ...weeklyAnalytics.map(
-      d => d.value
-    )
-  )
-} <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">XP</span></div>
-                <div className="text-xs font-medium text-slate-500 mt-0.5">Best Day</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Task Completion Donut */}
-          <div className="lg:col-span-4 rounded-xl border border-slate-200 bg-white p-5 md:p-6 shadow-sm flex flex-col">
-            <h3 className="font-bold text-slate-900 tracking-tight mb-6">Task Completion</h3>
-            <div className="flex flex-col sm:flex-row items-center gap-6 mb-6 flex-1 justify-center">
-              <div className="shrink-0 drop-shadow-sm">
-                <XPDonut
-  dailyTasks={dailyTasks}
-  weeklyTasks={weeklyTasks}
-  monthlyTasks={monthlyTasks}
-  oneTimeTasks={oneTimeTasks}
-  totalTaskBreakdown={totalTaskBreakdown}
-/>
-              </div>
-              <div className="space-y-3 w-full sm:w-auto">
-                <LegendDot
-  color="bg-violet-500 shadow-sm"
-  label="Daily Tasks"
-  value={`${dailyTasks} (${Math.round((dailyTasks / totalTaskBreakdown) * 100 || 0)}%)`}
-/>
-
-<LegendDot
-  color="bg-blue-500 shadow-sm"
-  label="Weekly Tasks"
-  value={`${weeklyTasks} (${Math.round((weeklyTasks / totalTaskBreakdown) * 100 || 0)}%)`}
-/>
-
-<LegendDot
-  color="bg-emerald-500 shadow-sm"
-  label="Monthly Tasks"
-  value={`${monthlyTasks} (${Math.round((monthlyTasks / totalTaskBreakdown) * 100 || 0)}%)`}
-/>
-
-<LegendDot
-  color="bg-amber-500 shadow-sm"
-  label="One Time"
-  value={`${oneTimeTasks} (${Math.round((oneTimeTasks / totalTaskBreakdown) * 100 || 0)}%)`}
-/>
-              </div>
-            </div>
-            <div className="mt-auto pt-5 border-t border-slate-100">
-              <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider mb-2">
-                <span className="text-slate-500">Completion Rate</span>
-                <span className="text-slate-900">
-  {completionRate}%
-</span>
-              </div>
-              <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
-                <div className="h-full rounded-full bg-blue-600 shadow-[0_0_8px_rgba(37,99,235,0.5)]" style={{
-  width: `${completionRate}%`
-}} />
-              </div>
-            </div>
-          </div>
-
-          {/* Upcoming Tasks List */}
-          <div className="lg:col-span-3 rounded-xl border border-slate-200 bg-white p-5 md:p-6 shadow-sm flex flex-col">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-slate-900 tracking-tight">Upcoming Tasks</h3>
-              <button className="text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors">View All</button>
-            </div>
-            <div className="flex-1 space-y-1 overflow-y-auto pr-1">
-              {
-  upcomingTasks.map(task => (
-
-    <UpcomingRow
-
-  key={task.id}
-
-  logo={
-    task.projects?.logo_url
-  }
-
-  title={
-    task.tasks?.name
-  }
-
-  project={
-    task.projects?.name
-  }
-
-  due={
-    formatDueTime(
-      task.next_due_time
-    )
-  }
-
-  recurring={
-    task.custom_interval
-  }
-
-  link={
-    task.tasks?.link
-  }
-
-/>
-
-  ))
-}
-            </div>
-            <a
-  href="/tracker/daily"
-  className="mt-4 w-full h-10 rounded-lg border border-slate-200 bg-slate-50 text-xs font-bold flex items-center justify-center gap-2 text-slate-600 hover:bg-slate-100 transition-colors"
->
-
-  View All ({upcomingTasks.length})
-
-  <ArrowRight className="h-3.5 w-3.5" />
-
-</a>
-          </div>
-        </div>
-
-        {/* ─── BOTTOM ROW (Portfolio & Activity) ─── */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          
-          {/* Portfolio Overview */}
-          <div className="lg:col-span-5 rounded-xl border border-slate-200 bg-white p-5 md:p-6 shadow-sm flex flex-col">
-            <h3 className="font-bold text-slate-900 tracking-tight mb-4">Portfolio Overview</h3>
-            <div className="grid grid-cols-12 gap-3 text-[10px] font-black uppercase tracking-widest text-slate-400 pb-3 border-b border-slate-100">
-              <div className="col-span-4 sm:col-span-3">Project</div>
-              <div className="col-span-3 sm:col-span-2 hidden sm:block">Score</div>
-              <div className="col-span-3 sm:col-span-2 text-center sm:text-left">Done</div>
-              <div className="col-span-5 sm:col-span-3 hidden sm:block">Completion</div>
-              <div className="col-span-5 sm:col-span-2 text-right">XP Earned</div>
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              {
-                portfolioProjects.slice((currentPage - 1) * 8, currentPage * 8).map(project => (
-                  <PortfolioRow
-                    key={project.id}
-                    logo={project.logo}
-                    name={project.name}
-                    score={project.score}
-                    done={project.done}
-                    total={project.total}
-                    pct={project.pct}
-                    xp={`${project.xp} XP`}
-                  />
-                ))
-              }
-            </div>
-            
-            {/* NEW PAGINATION DESIGN (Right Aligned) */}
-            {portfolioProjects.length > 8 && (
-              <div className="mt-4 pt-4 border-t border-slate-100 flex justify-end">
-                <div className="flex items-center gap-1.5">
-                  <button 
-                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                    className="w-8 h-8 flex items-center justify-center border border-slate-200 rounded-lg text-slate-500 hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
-                  >
-                    <ChevronLeft size={16} />
-                  </button>
-                  
-                  <div className="flex items-center gap-1">
-                    {[...Array(Math.ceil(portfolioProjects.length / 8))].map((_, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setCurrentPage(i + 1)}
-                        className={`w-8 h-8 rounded-lg text-xs font-bold flex items-center justify-center transition-all ${
-                          currentPage === i + 1 
-                            ? 'bg-blue-600 text-white shadow-sm' 
-                            : 'text-slate-500 hover:bg-slate-50 border border-transparent hover:border-slate-200'
-                        }`}
-                      >
-                        {i + 1}
-                      </button>
-                    ))}
+              <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-blue-600 transition-all" style={{ width: `${Math.min(100, (totalProjects / projectLimit) * 100)}%` }} /></div>
+              <div className="mt-3 flex items-center justify-between gap-3"><span className="text-xs font-medium text-slate-600">Keep building your portfolio</span><button type="button" onClick={() => navigate('/subscription')} className="rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-bold text-blue-600 hover:bg-blue-50">Upgrade to unlock unlimited</button></div>
+            </Card>
+            <Card>
+              <CardHeader title="How Engagement Score Works" icon={Info} />
+              <div className="flex flex-col items-center justify-between gap-6 xl:flex-row">
+                <div className="flex flex-1 flex-wrap items-center gap-x-8 gap-y-4">
+                  <ScoreRule icon={<Trophy className="h-4 w-4" />} label="Project Completion" value="40%" tone="text-violet-600 bg-violet-50" />
+                  <ScoreRule icon={<span className="text-sm">2</span>} label="Task Completion" value="30%" tone="text-blue-600 bg-blue-50" />
+                  <ScoreRule icon={<Repeat2 className="h-4 w-4" />} label="Recurring Performance" value="20%" tone="text-emerald-600 bg-emerald-50" />
+                  <ScoreRule icon={<Star className="h-4 w-4" />} label="SAIL Earned" value="10%" tone="text-emerald-600 bg-emerald-50" />
+                </div>
+                <div className="flex min-w-[240px] shrink-0 items-center gap-4 rounded-xl bg-slate-50 p-4">
+                  <div className="flex flex-col">
+                    <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-slate-700">Your Score</p>
+                    <div className="grid h-12 w-12 place-items-center rounded-full border-[3px] border-emerald-500 bg-white text-sm font-black text-slate-900 shadow-sm">{engagementScore}</div>
                   </div>
-
-                  <button 
-                    onClick={() => setCurrentPage(p => Math.min(Math.ceil(portfolioProjects.length / 8), p + 1))}
-                    disabled={currentPage === Math.ceil(portfolioProjects.length / 8)}
-                    className="w-8 h-8 flex items-center justify-center border border-slate-200 rounded-lg text-slate-500 hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
-                  >
-                     <ChevronRight size={16} />
-                  </button>
+                  <p className="max-w-[100px] text-[9px] font-medium leading-relaxed text-slate-500">Higher score = more SAIL opportunities.<br /><br />Stay consistent and complete tasks on time.</p>
                 </div>
               </div>
+            </Card>
+          </div>
+          <PremiumCard navigate={navigate} />
+        </div>
+
+        <div className="flex min-h-[84px] items-center justify-between gap-5 rounded-xl border border-violet-200 bg-gradient-to-r from-violet-50 to-white px-6 py-4">
+          <div className="flex items-center gap-4"><Megaphone className="h-10 w-10 text-violet-600" /><span className="hidden text-xl font-black text-slate-700 sm:block">720 x 90</span><span className="text-lg font-black text-violet-700">YOUR ADVERTISEMENT GOES HERE</span></div>
+          <button type="button" className="hidden rounded-lg border border-violet-200 bg-white px-6 py-2.5 text-xs font-bold text-blue-600 shadow-sm hover:bg-violet-50 sm:block">Advertise Now</button>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+          <Card className="lg:col-span-5">
+            <CardHeader title="SAIL Earned Breakdown" />
+            <div className="flex flex-col items-center gap-6 sm:flex-row sm:justify-center">
+              <div className="relative h-48 w-48"><ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={pieData} dataKey="value" nameKey="name" innerRadius={62} outerRadius={88} paddingAngle={2} stroke="white" strokeWidth={2}>{pieData.map((item, index) => <Cell key={item.name} fill={PIE_COLORS[index]} />)}</Pie><Tooltip /></PieChart></ResponsiveContainer><div className="pointer-events-none absolute inset-0 grid place-items-center text-center"><div><p className="text-2xl font-black text-slate-900">{totalXP.toLocaleString()}</p><p className="text-[10px] font-bold text-slate-400">Total SAIL</p></div></div></div>
+              <div className="w-full space-y-3 sm:w-auto"><LegendRows data={pieData} total={totalTaskBreakdown} /></div>
+            </div>
+          </Card>
+          <Card className="lg:col-span-5">
+            <CardHeader title="Consistency Score" />
+            <div className="h-56"><ResponsiveContainer height="100%" width="100%"><AreaChart data={weeklyAnalytics} margin={{ top: 12, right: 10, left: -18, bottom: 0 }}><defs><linearGradient id="colorConsistency" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#2563eb" stopOpacity={0.3} /><stop offset="95%" stopColor="#2563eb" stopOpacity={0} /></linearGradient></defs><CartesianGrid stroke="#e2e8f0" strokeDasharray="3 5" vertical={false} /><XAxis dataKey="label" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} /><YAxis allowDecimals={false} tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} /><Tooltip contentStyle={{ border: '1px solid #e2e8f0', borderRadius: '4px', boxShadow: '0 1px 6px rgba(0, 0, 0, 0.1)', color: '#2563eb', fontWeight: 700 }} itemStyle={{ color: '#2563eb' }} /><Area type="monotone" dataKey="value" stroke="#2563eb" strokeWidth={3} fill="url(#colorConsistency)" fillOpacity={1} activeDot={{ r: 6, fill: '#fff', stroke: '#2563eb', strokeWidth: 2 }} /></AreaChart></ResponsiveContainer></div>
+          </Card>
+          <Card className="flex flex-col lg:col-span-2">
+            <CardHeader title="Plan Overview" icon={Crown} />
+            <div className="mb-4 border-b border-slate-100 pb-4">
+              <span className={`flex w-full items-center justify-center rounded-lg px-3 py-2 text-[11px] font-black uppercase tracking-widest ${isPremium ? 'border border-violet-100 bg-violet-50 text-violet-700' : 'border border-blue-100 bg-blue-50 text-blue-700'}`}>
+                {planName}
+              </span>
+            </div>
+            <div className="flex-1 space-y-4 text-[11px] font-medium text-slate-600">
+              <PlanRow label="Projects Tracking" value={`${totalProjects} / ${projectLimit}`} />
+              <PlanRow label="Tasks Tracking" value="Unlimited" />
+              <PlanRow label="Daily Tasks" value="Unlimited" />
+              <PlanRow label="Plan Expires" value={expiryDate} />
+            </div>
+            {!isPremium && (
+              <button type="button" onClick={() => navigate('/subscription')} className="mt-6 w-full rounded-lg bg-violet-600 py-2.5 text-xs font-black text-white shadow-sm transition-all hover:bg-violet-700">
+                Upgrade to Premium
+              </button>
             )}
-          </div>
-
-          {/* SAILOR PASS */}
-<div className="lg:col-span-4 rounded-2xl overflow-hidden border border-blue-200 bg-gradient-to-br from-[#0f172a] via-[#172554] to-[#1e40af] shadow-sm relative">
-
-  {/* GLOW */}
-  <div className="absolute top-0 right-0 w-56 h-56 bg-cyan-400/10 rounded-full blur-3xl" />
-
-  <div className="relative z-10 p-6 h-full flex flex-col">
-
-    {/* TOP */}
-    <div className="flex items-start justify-between mb-4">
-
-      <div>
-
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/10 text-[10px] font-black uppercase tracking-[0.2em] text-cyan-200 backdrop-blur-sm">
-
-          <Star className="h-3 w-3 fill-cyan-200 text-cyan-200" />
-
-          Sailor Pass
-
+          </Card>
         </div>
 
-        <h3 className="mt-4 text-2xl font-black text-white leading-tight">
-          Upgrade Your
-          <br />
-          Farming Experience
-        </h3>
-
-      </div>
-
-      <div className="text-right">
-
-        <div className="text-3xl font-black text-white">
-          $1
-        </div>
-
-        <div className="text-[11px] uppercase tracking-widest font-bold text-blue-200">
-          per month
-        </div>
-
-      </div>
-
-    </div>
-
-    {/* SHIP IMAGE */}
-    <div className="relative flex justify-center mb-5">
-
-      <img
-        src={sailorShip}
-        alt="Sailor Pass"
-        className="w-72 object-contain drop-shadow-2xl"
-      />
-
-    </div>
-
-    {/* BENEFITS */}
-    <div className="space-y-3 mb-6">
-
-      <BenefitItem text="Track Unlimited Projects" />
-
-      <BenefitItem text="Full Access To Marketplace" />
-
-      <BenefitItem text="Instant Telegram Bot Alerts" />
-
-      <BenefitItem text="Earn More SAIL Than Others" />
-
-    </div>
-
-    {/* BUTTON */}
-    <button
-  onClick={() => navigate("/subscription")}
-  className="mt-auto h-12 rounded-xl bg-white text-blue-700 font-black text-sm hover:bg-blue-50 transition-all shadow-lg shadow-blue-900/30"
->
-  Upgrade To Sailor Pass
-</button>
-
-  </div>
-
-</div>
-
-          {/* Weekly Progress Overview */}
-          <div className="lg:col-span-3 rounded-xl border border-slate-200 bg-white p-5 md:p-6 shadow-sm flex flex-col">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="font-bold text-slate-900 tracking-tight">Weekly Progress</h3>
-              <button className="text-xs font-bold text-blue-600 hover:text-blue-700">Full Report</button>
-            </div>
-            
-            <div className="space-y-5">
-              <div>
-
-  <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
-
-    <span>XP Progress</span>
-
-    <span className="text-blue-600">
-      {xpProgress}%
-    </span>
-
-  </div>
-
-  <div className="flex items-end gap-1 mb-2">
-
-    <span className="text-lg font-black text-slate-900 leading-none">
-      {completedXP}
-    </span>
-
-    <span className="text-xs font-bold text-slate-400">
-      / {totalXP} XP
-    </span>
-
-  </div>
-
-  <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
-
-    <div
-      className="h-full rounded-full bg-blue-600 shadow-sm"
-      style={{
-        width: `${xpProgress}%`
-      }}
-    />
-
-  </div>
-
-</div>
-
-              <div>
-
-  <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
-
-    <span>Tasks Progress</span>
-
-    <span className="text-emerald-600">
-      {taskProgress}%
-    </span>
-
-  </div>
-
-  <div className="flex items-end gap-1 mb-2">
-
-    <span className="text-lg font-black text-slate-900 leading-none">
-      {completedTasks.length}
-    </span>
-
-    <span className="text-xs font-bold text-slate-400">
-      / {tasks.length}
-    </span>
-
-  </div>
-
-  <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
-
-    <div
-      className="h-full rounded-full bg-emerald-500 shadow-sm"
-      style={{
-        width: `${taskProgress}%`
-      }}
-    />
-
-  </div>
-
-</div>
-            </div>
-
-            <div className="mt-auto pt-5 border-t border-slate-100">
-              <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Category Breakdown</h4>
-              <div className="space-y-3">
-                <CategoryBar
-  color="bg-violet-500"
-  label="Daily"
-  pct={
-    Math.round(
-      (dailyTasks / totalTaskBreakdown) * 100
-    ) || 0
-  }
-/>
-
-<CategoryBar
-  color="bg-blue-500"
-  label="Weekly"
-  pct={
-    Math.round(
-      (weeklyTasks / totalTaskBreakdown) * 100
-    ) || 0
-  }
-/>
-
-<CategoryBar
-  color="bg-emerald-500"
-  label="Monthly"
-  pct={
-    Math.round(
-      (monthlyTasks / totalTaskBreakdown) * 100
-    ) || 0
-  }
-/>
-
-<CategoryBar
-  color="bg-amber-500"
-  label="One Time"
-  pct={
-    Math.round(
-      (oneTimeTasks / totalTaskBreakdown) * 100
-    ) || 0
-  }
-/>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+          {globalTopProjects.length > 0 ? (
+            <Card className="lg:col-span-5">
+              <CardHeader title="Top 5 Popular Projects" />
+              <div className="space-y-1">
+                {globalTopProjects.map((project, index) => (
+                  <TopProjectRow
+                    key={project.project_id}
+                    project={project}
+                    index={index}
+                    maxCount={globalTopProjects[0]?.user_count}
+                  />
+                ))}
               </div>
-            </div>
+            </Card>
+          ) : (
+            <Card className="lg:col-span-5">
+              <CardHeader title="Need your Efforts!" />
+              <div className="space-y-1">
+                {needsEffortProjects.length ? (
+                  needsEffortProjects.map((project, index) => (
+                    <NeedsEffortRow key={project.project_id} project={project} index={index} />
+                  ))
+                ) : (
+                  <EmptyState text="No project data available." />
+                )}
+              </div>
+            </Card>
+          )}
+          <Card className="lg:col-span-7"><CardHeader title="Performance by Project" right={<Dropdown label="This Month" />} /><div className="h-64"><ResponsiveContainer width="100%" height="100%"><BarChart data={performanceData} margin={{ top: 8, right: 0, left: -20, bottom: 0 }}><CartesianGrid stroke="#e2e8f0" strokeDasharray="3 5" vertical={false} /><XAxis dataKey="name" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} /><YAxis yAxisId="left" domain={[0, 100]} tickFormatter={(value) => `${value}%`} tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} /><YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10, fill: '#6d28d9' }} axisLine={false} tickLine={false} /><Tooltip /><Legend wrapperStyle={{ fontSize: 10, fontWeight: 700 }} /><Bar yAxisId="left" dataKey="completion" name="Completion %" fill="#2563eb" radius={[3, 3, 0, 0]} maxBarSize={22} /><Bar yAxisId="right" dataKey="xp" name="SAIL Earned" fill="#6d28d9" radius={[3, 3, 0, 0]} maxBarSize={22} /></BarChart></ResponsiveContainer></div></Card>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <Card className="flex h-[400px] flex-col">
+            <CardHeader title="Recent SAIL Activity" right={<button type="button" onClick={() => navigate('/xp-levels')} className="text-xs font-bold text-blue-600 hover:text-blue-700">View All</button>} />
+            <SlidingList slideKey={slideIndex} isEmpty={!visibleLedger.length} emptyText="No recent activity found.">
+              {visibleLedger.map((log, index) => (
+                <LedgerRow key={`${log.created_at}-${log.action_type}-${index}`} log={log} />
+              ))}
+            </SlidingList>
+          </Card>
+          <Card className="flex h-[400px] flex-col">
+            <CardHeader title="Latest Announcements" icon={Bell} />
+            <SlidingList slideKey={slideIndex} isEmpty={!visibleUpdates.length} emptyText="No new announcements.">
+              {visibleUpdates.map((update, index) => (
+                <AnnouncementRow key={`${update.created_at}-${update.title}-${index}`} announcement={update} />
+              ))}
+            </SlidingList>
+          </Card>
+        </div>
+
+        <Card>
+          <CardHeader title="Project Performance Overview" right={<Dropdown label="This Month" />} />
+          <div className="overflow-x-auto pb-2">
+            <table className="w-full min-w-[700px] border-collapse text-left">
+              <thead>
+                <tr className="border-b-2 border-slate-100 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  <th className="pb-4 pl-2">Project</th>
+                  <th className="pb-4">Engagement Score</th>
+                  <th className="pb-4">Completion</th>
+                  <th className="pb-4">SAIL Earned</th>
+                  <th className="pb-4 pr-2">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {topProjects.length ? (
+                  topProjects.map((project) => (
+                    <PerformanceRow key={project.id} project={project} />
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="5">
+                      <EmptyState text="No project performance data yet." />
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
-        </div>
+        </Card>
 
-        {/* ─── FOOTER ─── */}
-        <footer className="flex flex-col sm:flex-row items-center justify-between pt-4 text-xs font-bold text-slate-400 gap-4">
-          <span>Tracker Pro v1.0.0</span>
-          <div className="flex flex-wrap items-center justify-center gap-6">
-            <span className="flex items-center gap-1.5 uppercase tracking-widest">
-              Track <span className="h-2.5 w-2.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]" />
-            </span>
-            <span className="flex items-center gap-1.5 uppercase tracking-widest">
-              Complete <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
-            </span>
-            <span className="flex items-center gap-1.5 uppercase tracking-widest">
-              Earn <span className="h-2.5 w-2.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]" />
-            </span>
-          </div>
-          <span className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-100 text-emerald-600 px-2.5 py-1 rounded-md">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> 
-            All systems operational
-          </span>
-        </footer>
-
+        <footer className="flex flex-col items-center justify-between gap-4 pt-3 text-xs font-bold text-slate-400 sm:flex-row"><span>Tracker Pro v1.0.0</span><div className="flex items-center gap-6"><span>TRACK <i className="ml-1 inline-block h-2 w-2 rounded-full bg-blue-500" /></span><span>COMPLETE <i className="ml-1 inline-block h-2 w-2 rounded-full bg-emerald-500" /></span><span>EARN <i className="ml-1 inline-block h-2 w-2 rounded-full bg-amber-500" /></span></div><span className="flex items-center gap-1.5 text-emerald-600"><i className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" /> All systems operational</span></footer>
       </div>
     </div>
   );
 }
 
-// ============================================================================
-// HELPER COMPONENTS & DUMMY DATA
-// ============================================================================
-
-function StatCard({ icon, iconBg, label, value, unit, sub, subColor = "text-emerald-600" }) {
-  return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow cursor-default flex flex-col justify-between">
-      <div className="flex items-start gap-4">
-        <div className={`h-10 w-10 shrink-0 rounded-xl flex items-center justify-center border shadow-sm ${iconBg}`}>
-          {icon}
-        </div>
-        <div>
-          <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{label}</div>
-          <div className="text-2xl font-black text-slate-900 leading-none">
-            {value}
-            {unit && <span className="ml-1 text-[11px] font-bold text-slate-400 uppercase tracking-widest">{unit}</span>}
-          </div>
-          <div className={`mt-2 text-[10px] font-black uppercase tracking-widest ${subColor}`}>{sub}</div>
-        </div>
-      </div>
-    </div>
-  );
+function Card({ children, className = '' }) {
+  return <section className={`rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:p-6 ${className}`}>{children}</section>;
 }
 
-
-
-function PortfolioRow({
-  logo,
-  name,
-  score,
-  done,
-  total,
-  pct,
-  xp
-}) {
-  return (
-    <div className="grid grid-cols-12 items-center gap-3 py-3 border-b border-slate-50 hover:bg-slate-50/50 transition-colors group rounded-lg px-2 -mx-2">
-      <div className="col-span-4 sm:col-span-3 flex items-center gap-3">
-
-  {/* PROJECT LOGO */}
-  <div className="h-8 w-8 shrink-0 rounded-full overflow-hidden border border-slate-200 bg-white shadow-sm">
-
-    <img
-      src={logo}
-      alt={name}
-      className="w-full h-full object-cover"
-    />
-
-  </div>
-
-  {/* PROJECT NAME */}
-  <span className="font-bold text-slate-900 text-sm truncate">
-    {name}
-  </span>
-
-</div>
-      <div className="col-span-3 sm:col-span-2 hidden sm:flex items-center">
-        <span className={`inline-flex items-center justify-center min-w-[34px] h-6 rounded-md border text-[10px] font-black shadow-sm ${score >= 85 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
-          {score}
-        </span>
-      </div>
-      <div className="col-span-3 sm:col-span-2 text-xs font-bold text-slate-600 text-center sm:text-left">{done} <span className="text-slate-400">/ {total}</span></div>
-      <div className="col-span-5 sm:col-span-3 hidden sm:flex items-center gap-2 pr-4">
-        <div className="h-1.5 flex-1 rounded-full bg-slate-100 overflow-hidden">
-          <div className="h-full rounded-full bg-blue-500 transition-all" style={{ width: `${pct}%` }} />
-        </div>
-        <span className="text-[10px] font-black text-slate-500 w-8 text-right">{pct}%</span>
-      </div>
-      <div className="col-span-5 sm:col-span-2 text-right text-sm font-black text-blue-600">{xp}</div>
-    </div>
-  );
+function CardHeader({ title, icon: Icon, right }) {
+  return <div className="mb-5 flex items-center justify-between gap-3"><h2 className="flex items-center gap-2 text-sm font-bold tracking-tight text-slate-900">{Icon && <Icon className="h-4 w-4 text-violet-600" />}{title}</h2>{right}</div>;
 }
 
-function BenefitItem({ text }) {
-
-  return (
-
-    <div className="flex items-center gap-3">
-
-      <div className="h-5 w-5 rounded-full bg-cyan-400/20 border border-cyan-300/20 flex items-center justify-center shrink-0">
-
-        <CheckCircle2 className="h-3.5 w-3.5 text-cyan-200" />
-
-      </div>
-
-      <span className="text-sm font-semibold text-blue-50">
-        {text}
-      </span>
-
-    </div>
-
-  );
-
+function Dropdown({ label, icon: Icon }) {
+  return <button type="button" className="flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 text-sm font-bold text-slate-700 shadow-sm hover:bg-slate-50">{Icon && <Icon className="h-4 w-4 text-slate-500" />}{label}<ChevronDown className="ml-1 h-4 w-4 text-slate-400" /></button>;
 }
 
-function UpcomingRow({
-  logo,
-  title,
-  project,
-  due,
-  recurring,
-  link
-}) {
-
-  return (
-
-    <div className="flex items-center gap-3 py-3 border-b border-slate-50 last:border-0 hover:bg-slate-50/50 px-2 -mx-2 rounded-lg transition-colors cursor-pointer group">
-
-      {/* LOGO */}
-<div className="h-8 w-8 shrink-0 rounded-full bg-white border border-slate-200 overflow-hidden flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-
-  <img
-    src={logo}
-    alt={project}
-    className="w-full h-full object-cover"
-  />
-
-</div>
-
-      {/* CONTENT */}
-      <div className="flex-1 min-w-0">
-
-        <div className="text-sm font-bold text-slate-900 truncate group-hover:text-blue-600 transition-colors">
-          {title}
-        </div>
-
-        <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-0.5 truncate">
-          {project}
-        </div>
-
-      </div>
-
-      {/* RIGHT */}
-      <div className="flex flex-col items-end gap-1">
-
-        <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-orange-600 bg-orange-50 px-2 py-0.5 rounded border border-orange-100">
-
-          <Clock className="h-3 w-3 stroke-[3]" />
-
-          {due}
-          
-
-<div className="flex items-center gap-1.5">
-
-  <span className="text-[9px] font-black uppercase tracking-widest text-blue-700 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-md">
-
-    {
-      recurring === "24h"
-        ? "Daily"
-        : recurring === "7d"
-        ? "Weekly"
-        : recurring === "30d"
-        ? "Monthly"
-        : "One Time"
-    }
-
-  </span>
-
-</div>
-
-        </div>
-
-        
-
-      </div>
-
-    </div>
-
-  );
-
-}
-
-function LegendDot({ color, label, value }) {
-  return (
-    <div className="flex items-center gap-3 text-xs font-bold">
-      <span className={`h-2.5 w-2.5 rounded-full ${color}`} />
-      <span className="flex-1 text-slate-600">{label}</span>
-      <span className="text-slate-900">{value}</span>
-    </div>
-  );
-}
-
-function CategoryBar({ color, label, pct }) {
-  return (
-    <div className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-wider">
-      <span className="w-24 text-slate-500">{label}</span>
-      <div className="flex-1 h-1.5 rounded-full bg-slate-100 overflow-hidden">
-        <div className={`h-full rounded-full shadow-sm ${color}`} style={{ width: `${pct}%` }} />
-      </div>
-      <span className="text-slate-900 w-8 text-right">{pct}%</span>
-    </div>
-  );
-}
-
-/* ---------- XP donut (SVG) ---------- */
-function XPDonut({
-  dailyTasks,
-  weeklyTasks,
-  monthlyTasks,
-  oneTimeTasks,
-  totalTaskBreakdown
-}) {
-
-  const r = 60;
-
-  const c =
-    2 * Math.PI * r;
-
-  const segs = [
-
-    {
-      v: dailyTasks,
-      color: "#8b5cf6"
-    },
-
-    {
-      v: weeklyTasks,
-      color: "#3b82f6"
-    },
-
-    {
-      v: monthlyTasks,
-      color: "#10b981"
-    },
-
-    {
-      v: oneTimeTasks,
-      color: "#f59e0b"
-    }
-
-  ];
-
-  let offset = 0;
-
-  return (
-
-    <svg
-      viewBox="0 0 160 160"
-      className="w-36 h-36 sm:w-44 sm:h-44 transform -rotate-90"
-    >
-
-      {/* BG */}
-      <circle
-        cx="80"
-        cy="80"
-        r={r}
-        fill="none"
-        stroke="#f1f5f9"
-        strokeWidth="18"
-      />
-
-      {segs.map((s, i) => {
-
-        const len =
-          totalTaskBreakdown > 0
-            ? (s.v / totalTaskBreakdown) * c
-            : 0;
-
-        const el = (
-
+function CircularStatCard({ label, current = 0, max = 0, format = 'fraction', isUpgrade = false, onClick }) {
+  const radius = 42;
+  const circumference = 2 * Math.PI * radius;
+  const progress = isUpgrade || format === 'raw' ? 1 : max > 0 ? Math.min(1, Math.max(0, current / max)) : 0;
+  const strokeDashoffset = circumference * (1 - progress);
+  const formattedValue = format === 'fraction'
+    ? `${current}/${max}`
+    : format === 'percent'
+      ? `${Math.round(current)}%`
+      : Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(current).toLowerCase();
+  const content = (
+    <>
+      <div className="relative grid h-24 w-24 place-items-center">
+        <svg className="h-full w-full -rotate-90" viewBox="0 0 100 100" aria-hidden="true">
+          {isUpgrade && (
+            <defs>
+              <linearGradient id="premium-ring-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#7c3aed" />
+                <stop offset="100%" stopColor="#2563eb" />
+              </linearGradient>
+            </defs>
+          )}
+          <circle cx="50" cy="50" r={radius} fill="none" stroke="#eff6ff" strokeWidth="8" />
           <circle
-            key={i}
-            cx="80"
-            cy="80"
-            r={r}
+            cx="50"
+            cy="50"
+            r={radius}
             fill="none"
-            stroke={s.color}
-            strokeWidth="18"
-            strokeDasharray={`${len} ${c - len}`}
-            strokeDashoffset={-offset}
+            stroke={isUpgrade ? 'url(#premium-ring-gradient)' : '#2563eb'}
+            strokeWidth="8"
             strokeLinecap="round"
-            className="transition-all duration-1000 ease-out"
+            strokeDasharray={circumference}
+            strokeDashoffset={strokeDashoffset}
           />
-
-        );
-
-        offset += len;
-
-        return el;
-
-      })}
-
-      {/* CENTER */}
-      <g transform="rotate(90 80 80)">
-
-        <text
-          x="80"
-          y="76"
-          textAnchor="middle"
-          className="fill-slate-900 font-black text-3xl"
-        >
-          {totalTaskBreakdown}
-        </text>
-
-        <text
-          x="80"
-          y="96"
-          textAnchor="middle"
-          className="fill-slate-400 font-black text-[10px] uppercase tracking-widest"
-        >
-          Tracked
-        </text>
-
-      </g>
-
-    </svg>
-
+        </svg>
+        <span className="absolute text-lg font-black text-slate-900">{isUpgrade ? <Crown className="h-6 w-6 text-violet-600" /> : formattedValue}</span>
+      </div>
+      <span className="mt-3 text-center text-[11px] font-bold text-slate-500">{label}</span>
+    </>
   );
 
+  return onClick
+    ? <button type="button" onClick={onClick} className="flex min-h-[158px] flex-col items-center justify-center rounded-xl border border-slate-100 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">{content}</button>
+    : <div className="flex min-h-[158px] flex-col items-center justify-center rounded-xl border border-slate-100 bg-white p-4 shadow-sm">{content}</div>;
 }
 
-/* ---------- XP Line chart (SVG) ---------- */
-function XPChart({
-  weeklyAnalytics,
-  maxGraphValue
-}) {
+function PremiumCard({ navigate }) {
+  return <section className="relative overflow-hidden rounded-xl border border-violet-200 bg-[linear-gradient(135deg,#F3F0FF_0%,#EDE9FE_100%)] p-5 shadow-sm lg:col-span-4"><div className="relative z-10"><div className="flex items-start justify-between"><div><div className="flex items-center gap-2 text-violet-700"><Crown className="h-5 w-5" /><span className="text-sm font-black">Upgrade to Premium</span></div><p className="mt-3 text-sm font-bold text-slate-900">Only $1 / month</p></div><img src={sailorShip} alt="Sailor Pass" className="-mr-4 -mt-3 h-28 w-28 object-contain" /></div><div className="mt-3 space-y-2 text-xs font-medium text-slate-700">{['Get Voyager Role', 'Unlimited Project Tracking', 'Unlimited Task Tracking', 'Priority Support', 'Early Access to New Features'].map((item) => <p key={item} className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-violet-600" />{item}</p>)}</div><button type="button" onClick={() => navigate('/subscription')} className="mt-5 h-10 w-full rounded-lg bg-violet-600 text-xs font-black text-white shadow-sm hover:bg-violet-700">Upgrade Now - $1 / Month</button></div></section>;
+}
 
-  const width = 640;
-  const height = 260;
+function ScoreRule({ icon, label, value, tone }) {
+  return <div className="flex items-center gap-2.5"><span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-sm font-black ${tone}`}>{icon}</span><div><p className="whitespace-nowrap text-[10px] font-medium text-slate-500">{label}</p><p className="text-xs font-black text-slate-900">{value}</p></div></div>;
+}
 
-  const paddingX = 45;
-  const paddingTop = 35;
-  const paddingBottom = 45;
+function PlanRow({ label, value }) {
+  return <div className="flex items-center justify-between gap-2"><span>{label}</span><span className="font-black text-slate-900">{value}</span></div>;
+}
 
-  const chartHeight =
-    height - paddingTop - paddingBottom;
+function LegendRows({ data, total }) {
+  return data.map((item, index) => <div key={item.name} className="flex items-center gap-3 text-xs font-medium text-slate-600"><span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: PIE_COLORS[index] }} /><span className="min-w-32 flex-1">{item.name}</span><span className="font-black text-slate-900">{item.value} <span className="font-medium text-slate-400">({total ? Math.round((item.value / total) * 100) : 0}%)</span></span></div>);
+}
 
-  const stepX =
-    (width - paddingX * 2) /
-    (weeklyAnalytics.length - 1);
-
-  const points =
-    weeklyAnalytics.map((d, i) => {
-
-      const x =
-        paddingX + i * stepX;
-
-      const y =
-        paddingTop +
-        (
-          1 -
-          (d.value / maxGraphValue)
-        ) * chartHeight;
-
-      return {
-        x,
-        y,
-        value: d.value,
-        label: d.label
-      };
-
-    });
-
-  // SMOOTH CURVE
-  const smoothPath = points.reduce(
-    (acc, point, i, arr) => {
-
-      if (i === 0)
-        return `M ${point.x} ${point.y}`;
-
-      const prev = arr[i - 1];
-
-      const midX =
-        (prev.x + point.x) / 2;
-
-      return `
-        ${acc}
-        Q ${midX} ${prev.y},
-        ${midX} ${(prev.y + point.y) / 2}
-        T ${point.x} ${point.y}
-      `;
-
-    },
-    ""
-  );
-
-  const areaPath = `
-    ${smoothPath}
-    L ${points[points.length - 1].x} ${height - paddingBottom}
-    L ${points[0].x} ${height - paddingBottom}
-    Z
-  `;
+function TopProjectRow({ project, index, maxCount }) {
+  const userCount = Number(project.user_count) || 0;
+  const highestUserCount = Number(maxCount) || 0;
+  const barWidth = highestUserCount > 0 ? Math.min(100, (userCount / highestUserCount) * 100) : 0;
 
   return (
-
-    <svg
-      viewBox={`0 0 ${width} ${height}`}
-      className="w-full h-full"
-      preserveAspectRatio="none"
-    >
-
-      <defs>
-
-        {/* AREA */}
-        <linearGradient
-          id="areaGradient"
-          x1="0"
-          y1="0"
-          x2="0"
-          y2="1"
-        >
-
-          <stop
-            offset="0%"
-            stopColor="#2563eb"
-            stopOpacity="0.22"
-          />
-
-          <stop
-            offset="100%"
-            stopColor="#2563eb"
-            stopOpacity="0"
-          />
-
-        </linearGradient>
-
-        {/* GLOW */}
-        <filter id="glow">
-
-          <feGaussianBlur
-            stdDeviation="4"
-            result="coloredBlur"
-          />
-
-          <feMerge>
-
-            <feMergeNode in="coloredBlur" />
-            <feMergeNode in="SourceGraphic" />
-
-          </feMerge>
-
-        </filter>
-
-      </defs>
-
-      {/* GRID */}
-      {[0,1,2,3].map(i => {
-
-        const y =
-          paddingTop +
-          (chartHeight / 3) * i;
-
-        return (
-          <line
-            key={i}
-            x1={paddingX}
-            x2={width - paddingX}
-            y1={y}
-            y2={y}
-            stroke="#e2e8f0"
-            strokeDasharray="3 6"
-          />
-        );
-
-      })}
-
-      {/* AREA */}
-      <path
-        d={areaPath}
-        fill="url(#areaGradient)"
-      />
-
-      {/* GLOW LINE */}
-      <path
-        d={smoothPath}
-        fill="none"
-        stroke="#60a5fa"
-        strokeWidth="8"
-        opacity="0.15"
-        filter="url(#glow)"
-      />
-
-      {/* MAIN LINE */}
-      <path
-        d={smoothPath}
-        fill="none"
-        stroke="#2563eb"
-        strokeWidth="4"
-        strokeLinecap="round"
-      />
-
-      {/* POINTS */}
-      {points.map((p, i) => (
-
-        <g key={i}>
-
-          {/* OUTER */}
-          <circle
-            cx={p.x}
-            cy={p.y}
-            r="10"
-            fill="#dbeafe"
-            opacity="0.7"
-          />
-
-          {/* INNER */}
-          <circle
-            cx={p.x}
-            cy={p.y}
-            r="5"
-            fill="#2563eb"
-            stroke="white"
-            strokeWidth="3"
-          />
-
-          {/* VALUE */}
-          <text
-            x={p.x}
-            y={p.y - 18}
-            textAnchor="middle"
-            className="fill-slate-700 text-[11px] font-black"
-          >
-            {p.value}
-          </text>
-
-          {/* DAY */}
-          <text
-            x={p.x}
-            y={height - 12}
-            textAnchor="middle"
-            className="fill-slate-400 text-[10px] font-bold uppercase"
-          >
-            {p.label}
-          </text>
-
-        </g>
-
-      ))}
-
-    </svg>
-
+    <div className="flex items-center gap-3 border-b border-slate-50 py-3 last:border-0">
+      <span className="w-4 text-xs font-black text-slate-500">{index + 1}</span>
+      <ProjectIdentity logo={project.logo_url} name={project.name} />
+      <div className="hidden min-w-20 flex-1 items-center gap-2 sm:flex">
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
+          <div className="h-full rounded-full bg-blue-600" style={{ width: `${barWidth}%` }} />
+        </div>
+      </div>
+      <span className="whitespace-nowrap text-xs font-black text-slate-700">{userCount.toLocaleString()} Users</span>
+    </div>
   );
+}
 
+function NeedsEffortRow({ project, index }) {
+  const score = Number(project.engagement_score) || 0;
+  const barWidth = Math.min(100, Math.max(0, score));
+  const barColor = score < 50 ? 'bg-rose-500' : 'bg-amber-500';
+  const textColor = score < 50 ? 'text-rose-600' : 'text-amber-600';
+
+  return (
+    <div className="flex items-center gap-3 border-b border-slate-50 py-3 last:border-0">
+      <span className="w-4 text-xs font-black text-slate-500">{index + 1}</span>
+      <ProjectIdentity logo={project.projects?.logo_url} name={project.projects?.name || 'Unnamed project'} />
+      <div className="hidden min-w-20 flex-1 items-center gap-2 sm:flex">
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
+          <div className={`h-full rounded-full ${barColor}`} style={{ width: `${barWidth}%` }} />
+        </div>
+      </div>
+      <span className={`whitespace-nowrap text-xs font-black ${textColor}`}>{score}% Score</span>
+    </div>
+  );
+}
+
+function ProjectIdentity({ logo, name }) {
+  return <div className="flex min-w-0 flex-1 items-center gap-2"><div className="grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-full border border-slate-200 bg-slate-50">{logo ? <img src={logo} alt="" className="h-full w-full object-cover" /> : <ImageIcon className="h-3.5 w-3.5 text-slate-400" />}</div><span className="truncate text-xs font-bold text-slate-900">{name}</span></div>;
+}
+
+function PerformanceRow({ project }) {
+  let scoreColor = 'bg-slate-100 text-slate-600';
+  let scoreLabel = 'Needs Effort';
+
+  if (project.score >= 80) {
+    scoreColor = 'border border-emerald-100 bg-emerald-50 text-emerald-600';
+    scoreLabel = 'Excellent';
+  } else if (project.score >= 50) {
+    scoreColor = 'border border-blue-100 bg-blue-50 text-blue-600';
+    scoreLabel = 'Good';
+  } else if (project.score > 0) {
+    scoreColor = 'border border-amber-100 bg-amber-50 text-amber-600';
+    scoreLabel = 'Average';
+  }
+
+  return (
+    <tr className="group transition-colors hover:bg-slate-50/50">
+      <td className="py-4 pl-2">
+        <ProjectIdentity logo={project.logo} name={project.name} />
+      </td>
+      <td className="py-4">
+        <div className="flex items-center gap-2.5">
+          <span className="text-sm font-black tabular-nums text-slate-800">{project.score}</span>
+          <span className={`rounded-md px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${scoreColor}`}>
+            {scoreLabel}
+          </span>
+        </div>
+      </td>
+      <td className="py-4">
+        <div className="flex items-center gap-3">
+          <div className="h-1.5 w-16 overflow-hidden rounded-full bg-slate-100">
+            <div
+              className="h-full rounded-full bg-blue-500 transition-all duration-500"
+              style={{ width: `${project.pct}%` }}
+            />
+          </div>
+          <span className="text-xs font-bold tabular-nums text-slate-700">{project.pct}%</span>
+        </div>
+      </td>
+      <td className="py-4">
+        <span className="text-xs font-black tabular-nums text-blue-600">
+          +{project.xp.toLocaleString()} SAIL
+        </span>
+      </td>
+      <td className="py-4 pr-2">
+        <span className="inline-flex items-center gap-1.5 rounded-md border border-emerald-100 bg-emerald-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+          {project.status || 'Active'}
+        </span>
+      </td>
+    </tr>
+  );
+}
+
+function SlidingList({ children, slideKey, isEmpty, emptyText }) {
+  return (
+    <div className="relative flex-1 overflow-hidden">
+      {isEmpty ? (
+        <EmptyState text={emptyText} />
+      ) : (
+        <AnimatePresence initial={false} mode="wait">
+          <MotionDiv
+            key={slideKey}
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -18 }}
+            transition={{ duration: 0.4, ease: 'easeInOut' }}
+            className="divide-y divide-slate-100"
+          >
+            {children}
+          </MotionDiv>
+        </AnimatePresence>
+      )}
+    </div>
+  );
+}
+
+function LedgerRow({ log }) {
+  const date = formatShortDate(log.created_at);
+  const amount = Number(log.amount) || 0;
+  const isPositive = amount >= 0;
+  const description = log.description || log.action_type?.replaceAll('_', ' ') || 'SAIL activity';
+
+  return (
+    <div className="grid min-h-14 grid-cols-[auto_1fr_auto] items-center gap-3 py-3 text-xs">
+      <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-black ${isPositive ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+        {isPositive ? '+' : '-'}
+      </span>
+      <span className="truncate font-medium capitalize text-slate-700">{description}</span>
+      <div className="flex flex-col items-end gap-0.5">
+        <span className={`font-black ${isPositive ? 'text-emerald-600' : 'text-rose-600'}`}>
+          {isPositive ? '+' : ''}{amount.toLocaleString()} SAIL
+        </span>
+        <span className="whitespace-nowrap text-[9px] font-medium text-slate-400">{date}</span>
+      </div>
+    </div>
+  );
+}
+
+function AnnouncementRow({ announcement }) {
+  const date = formatShortDate(announcement.created_at);
+  const categoryColor = announcement.category_color || '#2563eb';
+  const categoryBackground = announcement.category_bg || '#eff6ff';
+  const destination = announcement.link || undefined;
+
+  return (
+    <a
+      href={destination}
+      target={destination ? '_blank' : undefined}
+      rel={destination ? 'noreferrer' : undefined}
+      aria-disabled={!destination}
+      className={`grid min-h-14 grid-cols-[1fr_auto_auto_auto] items-center gap-3 py-3 text-xs transition-colors ${destination ? 'hover:bg-slate-50' : 'cursor-default'}`}
+    >
+      <span className="flex min-w-0 items-center gap-2 truncate font-medium text-slate-700">
+        <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: categoryColor }} />
+        {announcement.title}
+      </span>
+      <span
+        className="hidden rounded border px-2 py-1 text-[9px] font-bold sm:block"
+        style={{
+          backgroundColor: categoryBackground,
+          borderColor: announcement.category_bg ? 'transparent' : '#bfdbfe',
+          color: categoryColor,
+        }}
+      >
+        {announcement.category}
+      </span>
+      <span className="whitespace-nowrap text-[10px] font-medium text-slate-400">{date}</span>
+      <ArrowRight className={`h-3.5 w-3.5 ${destination ? 'text-slate-400' : 'text-slate-200'}`} />
+    </a>
+  );
+}
+
+function formatShortDate(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '-';
+
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function EmptyState({ text }) {
+  return <div className="py-10 text-center text-xs font-medium text-slate-400">{text}</div>;
 }

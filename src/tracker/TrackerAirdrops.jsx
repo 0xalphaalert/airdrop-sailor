@@ -191,7 +191,7 @@ export default function TrackerAirdrops() {
   const hasActiveFilters = filters.statuses.length > 0 || filters.tiers.length > 0 || filters.fundingMin > 0 || filters.scoreRange[0] > 0 || filters.scoreRange[1] < 100;
 
   const searchedProjects = allProjects.filter(project => {
-    const score = Number(project.social_score) || 0;
+    const score = Number(project.score_total) || 0;
     const status = project.status || 'Not Started';
 
     return project.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -530,7 +530,7 @@ function TrackedCard({ project, stats, onUntrack }) {
         
         {/* SCORE RING */}
         <div className="text-center border-l border-r border-slate-100 px-1 flex flex-col items-center justify-end">
-          <ScoreRing score={project.social_score} />
+          <ScoreRing score={project.score_total} />
           <div className="text-[11px] font-medium text-slate-500 mt-0.5">Score</div>
         </div>
 
@@ -602,7 +602,7 @@ function AvailableCard({ project, onTrack, isProcessing, isNew }) {
         
         {/* SCORE RING */}
         <div className="text-center border-l border-r border-slate-100 px-1 flex flex-col items-center justify-end">
-          <ScoreRing score={project.social_score} />
+          <ScoreRing score={project.score_total} />
           <div className="text-[11px] font-medium text-slate-500 mt-0.5">Score</div>
         </div>
 

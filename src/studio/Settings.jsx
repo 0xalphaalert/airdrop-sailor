@@ -382,12 +382,12 @@ export default function Settings() {
     <div className="p-6 max-w-[1600px] mx-auto flex flex-col lg:flex-row gap-6 items-start font-sans">
       
       {/* 1. LEFT SIDEBAR MENU */}
-      <div className="w-full lg:w-64 bg-white border border-slate-200 rounded-2xl p-3 shadow-sm flex flex-col shrink-0">
+      <div className="w-full lg:w-64 bg-white border border-slate-200 rounded-2xl p-3 shadow-sm flex flex-row overflow-x-auto lg:flex-col shrink-0 gap-2 scrollbar-hide">
         {menuItems.map((item, i) => (
           <button 
             key={i} 
             onClick={() => setActiveTab(item.name)}
-            className={`flex items-center justify-between px-4 py-3 rounded-xl text-sm transition-colors text-left w-full
+            className={`flex items-center justify-between px-4 py-3 rounded-xl text-sm transition-colors text-left w-auto lg:w-full min-w-max lg:min-w-0 shrink-0 whitespace-nowrap
               ${activeTab === item.name 
                 ? 'bg-violet-50 text-violet-600 font-bold' 
                 : item.danger 
