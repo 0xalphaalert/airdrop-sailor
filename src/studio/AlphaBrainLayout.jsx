@@ -3,7 +3,7 @@ import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../useAuth';
 import { 
   LayoutDashboard, Palette, FileText, Twitter, Send, Hash, TrendingUp, Settings, ArrowLeft,
-  Menu, X, PanelLeftClose
+  Menu, X, PenLine
 } from 'lucide-react';
 
 export default function AlphaBrainLayout() {
@@ -43,6 +43,7 @@ export default function AlphaBrainLayout() {
   const navItems = [
     { name: 'Dashboard', path: '/studio', icon: <LayoutDashboard size={18} />, exact: true },
     { name: 'Studio', path: '/studio/create', icon: <Palette size={18} /> },
+    { name: 'Writing Pad', path: '/studio/writing-pad', icon: <PenLine size={18} /> },
     { name: 'Content', path: '/studio/content', icon: <FileText size={18} /> },
     { name: 'X Engine', path: '/studio/x-engine', icon: <Twitter size={18} /> },
     { name: 'Telegram Engine', path: '/studio/telegram', icon: <Send size={18} /> },

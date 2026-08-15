@@ -37,13 +37,16 @@ export default function AdminLayout() {
 
   // 🚀 Cleaned Navigation Map (Removed unused menu options)
   const navItems = [
+    { id: 'dailywork', path: '/admin/daily-work', label: 'Admin Daily Work', icon: '🛠️', badge: true },
+    { id: 'research', path: '/admin/research-daily', label: 'Research Intel', icon: '📡', badge: true },
+    { id: 'studiodaily', path: '/admin/studio-daily', label: 'Studio Tasks', icon: '🎨', badge: true },
     { id: 'overview', path: '/admin', label: 'Command Center', icon: '🧠' },
     { id: 'manageas', path: '/admin/manage', label: 'Manage Core DB', icon: '⚙️' },
     { id: 'content', path: '/admin/content', label: 'Content Manager', icon: '📝' },
     { id: 'earlylist', path: '/admin/early', label: 'VC Profiles', icon: '📡' },
     { id: 'telegramintel', path: '/admin/telegram-intel', label: 'Telegram Intel', icon: '💬', badge: true },
     { id: 'datagaps', path: '/admin/data-gaps', label: 'Data Gaps', icon: '🚨' },
-    { id: 'research', path: '/admin/research', label: 'Research Hub', icon: '🔬' },
+    { id: 'research-hub', path: '/admin/research', label: 'Research Hub', icon: '🔬' },
     { id: 'pendingreviews', path: '/admin/pendingreviews', label: 'Pending Reviews', icon: '📋', badge: true },
   ];
 
@@ -128,7 +131,7 @@ export default function AdminLayout() {
       </aside>
 
       {/* DYNAMIC MAIN CONTENT AREA */}
-      <main className={`flex-1 overflow-y-auto relative z-10 p-6 md:p-10 custom-scrollbar ${location.pathname === '/admin/research' ? 'bg-white' : ''}`}>
+      <main className={`flex-1 overflow-y-auto relative z-10 p-6 md:p-10 custom-scrollbar ${location.pathname === '/admin' || location.pathname === '/admin/research' || location.pathname === '/admin/research-daily' || location.pathname === '/admin/studio-daily' ? 'bg-white' : location.pathname === '/admin/daily-work' ? 'bg-slate-50' : ''}`}>
         {/* THIS IS WHERE REACT ROUTER INJECTS THE SUB-PAGES */}
         <Outlet /> 
       </main>

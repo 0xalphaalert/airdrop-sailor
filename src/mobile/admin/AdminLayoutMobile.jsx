@@ -22,6 +22,9 @@ export default function AdminLayoutMobile() {
 
   // Updated to strictly show only the requested admin pages
   const navItems = [
+    { name: 'Admin Daily Work', path: '/admin/daily-work', icon: <span className="text-base" aria-hidden="true">🛠️</span> },
+    { name: 'Research Intel', path: '/admin/research-daily', icon: <span className="text-base" aria-hidden="true">📡</span> },
+    { name: 'Studio Tasks', path: '/admin/studio-daily', icon: <span className="text-base" aria-hidden="true">🎨</span> },
     { name: 'Command Center', path: '/admin', icon: <Brain size={18} /> },
     { name: 'Manage Core DB', path: '/admin/manage', icon: <Database size={18} /> },
     { name: 'Content Manager', path: '/admin/content', icon: <FileText size={18} /> },

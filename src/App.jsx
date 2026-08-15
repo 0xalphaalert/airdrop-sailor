@@ -46,11 +46,15 @@ import AdminExchangeOffers from './admin/ExchangeOffers';
 import TokenGiveaways from './admin/TokenGiveaways';
 import PendingReviews from './admin/PendingReviews';
 import TelegramIntel from './admin/TelegramIntel';
+import AdminDailyTasks from './admin/AdminDailyTasks';
+import ResearchDailyTasks from './admin/ResearchDailyTasks';
+import StudioDailyTasks from './admin/StudioDailyTasks';
 
 // --- ALPHABRAIN STUDIO IMPORTS ---
 import AlphaBrainLayout from './studio/AlphaBrainLayout';
 import Dashboard from './studio/Dashboard';
 import CreatorStudio from './studio/CreatorStudio';
+import WritingPad from './studio/WritingPad';
 import Content from './studio/Content';
 import FarcasterEngine from './studio/FarcasterEngine';
 import BinanceSquareEngine from './studio/BinanceSquareEngine';
@@ -164,6 +168,7 @@ const AppLayout = () => {
           <Route path="/studio" element={<ProtectedRoute><AlphaBrainLayout /></ProtectedRoute>}>
             <Route index element={<Dashboard />} />
             <Route path="create" element={<CreatorStudio />} />
+            <Route path="writing-pad" element={<WritingPad />} />
             <Route path="content" element={<Content />} />
             <Route path="farcaster" element={<FarcasterEngine />} />
             <Route path="binance" element={<BinanceSquareEngine />} />
@@ -173,6 +178,9 @@ const AppLayout = () => {
           {/* --- ADMIN ENVIRONMENT (Responsive Layout) --- */}
           <Route path="/admin" element={<ProtectedRoute><ResponsiveAdminLayout isMobile={isMobile} /></ProtectedRoute>}>
             <Route index element={<Overview />} />
+            <Route path="daily-work" element={<AdminDailyTasks />} />
+            <Route path="research-daily" element={<ResearchDailyTasks />} />
+            <Route path="studio-daily" element={<StudioDailyTasks />} />
             <Route path="manage" element={isMobile ? <ManageCoreDBMobile /> : <Manageas />} />
             <Route path="content" element={isMobile ? <AdminContentManagerMobile /> : <AdminContentManager />} />
             <Route path="early" element={isMobile ? <EarlylistMobile /> : <Earlylist />} />
