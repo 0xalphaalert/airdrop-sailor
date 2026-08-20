@@ -30,7 +30,6 @@ export default function AdminLayoutMobile() {
     { name: 'Content Manager', path: '/admin/content', icon: <FileText size={18} /> },
     { name: 'AI Intelligence', path: '/admin/early', icon: <Brain size={18} /> },
     { name: 'Token Giveaways', path: '/admin/giveaways', icon: <Gift size={18} /> },
-    { name: 'Data Gaps', path: '/admin/data-gaps', icon: <span className="text-base" aria-hidden="true">🚨</span> },
     { name: 'Research Hub', path: '/admin/research', icon: <span className="text-base" aria-hidden="true">🔬</span> },
     { name: 'Pending Reviews', path: '/admin/pendingreviews', icon: <ClipboardCheck size={18} /> },
   ];

@@ -45,7 +45,6 @@ export default function AdminLayout() {
     { id: 'content', path: '/admin/content', label: 'Content Manager', icon: '📝' },
     { id: 'earlylist', path: '/admin/early', label: 'VC Profiles', icon: '📡' },
     { id: 'telegramintel', path: '/admin/telegram-intel', label: 'Telegram Intel', icon: '💬', badge: true },
-    { id: 'datagaps', path: '/admin/data-gaps', label: 'Data Gaps', icon: '🚨' },
     { id: 'research-hub', path: '/admin/research', label: 'Research Hub', icon: '🔬' },
     { id: 'pendingreviews', path: '/admin/pendingreviews', label: 'Pending Reviews', icon: '📋', badge: true },
   ];

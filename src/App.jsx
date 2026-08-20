@@ -69,7 +69,6 @@ import XPLevelsPage from './pages/XPLevelsPage';
 import MarketplacePage from './pages/MarketplacePage';
 import AutoWorker from './pages/AutoWorker';
 import ProjectResearchHub from './pages/admin/ProjectResearchHub';
-import DataGapsStudio from './admin/DataGapsStudio';
 
 // 🚀 OLD BEHAVIOR RESTORED: Dynamic Index Route
 const IndexRoute = () => {
@@ -186,7 +185,6 @@ const AppLayout = () => {
             <Route path="early" element={isMobile ? <EarlylistMobile /> : <Earlylist />} />
             <Route path="giveaways" element={isMobile ? <TokenGiveawaysMobile /> : <TokenGiveaways />} />
             <Route path="telegram-intel" element={<TelegramIntel />} />
-            <Route path="data-gaps" element={<DataGapsStudio />} />
             <Route path="research" element={<ProjectResearchHub />} />
             <Route path="pendingreviews" element={isMobile ? <PendingReviewsMobile /> : <PendingReviews />} />
           </Route>

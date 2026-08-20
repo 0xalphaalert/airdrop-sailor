@@ -25,6 +25,15 @@ const navItems = [
 
 const EMPTY_STATS = { streak: 0, xp: 0, sail: 0 };
 const EMPTY_PROFILE = { avatarUrl: null, username: null, fullName: null };
+const SEARCH_DEBOUNCE_MS = 300;
+
+const getSearchTaskName = (row) =>
+  row?.tasks?.name || row?.name || row?.title || row?.task_name || 'Untitled task';
+
+const getSearchProjectName = (row) =>
+  row?.projects?.name || row?.project_name || 'Personal Workspace';
+
+const searchText = (value) => String(value || '').trim().toLowerCase();
 
 /** Never let a null/undefined/NaN column break the header layout. */
 const safeNumber = (value) => {
@@ -151,6 +160,9 @@ export default function TrackerHeader() {
   const [user, setUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [stats, setStats] = useState(EMPTY_STATS);
   const [statsLoading, setStatsLoading] = useState(true);
@@ -176,6 +188,118 @@ export default function TrackerHeader() {
 
     return () => listener.subscription.unsubscribe();
   }, []);
+
+  /* ---- Debounced live search across the current user's tracker data ---- */
+  useEffect(() => {
+    const needle = searchText(searchQuery);
+    if (!needle || !user?.id) {
+      const timeout = window.setTimeout(() => {
+        setSearchResults([]);
+        setSearchLoading(false);
+        setSearchError(false);
+      }, 0);
+      return () => window.clearTimeout(timeout);
+    }
+
+    let cancelled = false;
+
+    const timeout = window.setTimeout(async () => {
+      setSearchLoading(true);
+      setSearchError(false);
+      try {
+        const [taskResult, customTaskResult, projectResult] = await Promise.allSettled([
+          supabase
+            .from('tracker_user_tasks')
+            .select('*, tasks (id, name), projects (id, name, logo_url)')
+            .eq('auth_id', user.id)
+            .limit(100),
+          supabase
+            .from('tracker_custom_tasks')
+            .select('*')
+            .eq('auth_id', user.id)
+            .limit(100),
+          supabase
+            .from('tracker_user_projects')
+            .select('project_id, projects (id, name, logo_url, slug)')
+            .eq('auth_id', user.id)
+            .limit(100),
+        ]);
+
+        const taskError = taskResult.status === 'fulfilled' ? taskResult.value?.error : taskResult.reason;
+        const customTaskError =
+          customTaskResult.status === 'fulfilled' ? customTaskResult.value?.error : customTaskResult.reason;
+        const projectError =
+          projectResult.status === 'fulfilled' ? projectResult.value?.error : projectResult.reason;
+        const taskRows = taskResult.status === 'fulfilled' && !taskError ? taskResult.value?.data || [] : [];
+        const customTaskRows =
+          customTaskResult.status === 'fulfilled' && !customTaskError ? customTaskResult.value?.data || [] : [];
+        const projectRows =
+          projectResult.status === 'fulfilled' && !projectError ? projectResult.value?.data || [] : [];
+
+        if (taskError) {
+          console.warn('Tracker header: tracked task search unavailable.');
+        }
+        if (customTaskError) {
+          console.warn('Tracker header: personal task search unavailable.');
+        }
+        if (projectError) {
+          console.warn('Tracker header: tracked project search unavailable.');
+        }
+
+        const matchingTasks = [
+          ...taskRows
+            .filter((row) => searchText(row.status) !== 'completed')
+            .map((row) => ({ ...row, source: 'project' })),
+          ...customTaskRows
+            .filter((row) => searchText(row.status) !== 'completed')
+            .map((row) => ({ ...row, source: 'custom' })),
+        ]
+          .filter((row) => {
+            const taskName = getSearchTaskName(row);
+            const projectName = getSearchProjectName(row);
+            return searchText(`${taskName} ${projectName}`).includes(needle);
+          })
+          .map((row) => ({
+            id: `${row.source}-task-${row.id}`,
+            type: 'task',
+            sourceId: row.id,
+            taskId: `${row.source}-${row.id}`,
+            name: getSearchTaskName(row),
+            context: getSearchProjectName(row),
+          }));
+
+        const matchingProjects = projectRows
+          .filter((row) => searchText(`${row.projects?.name} ${row.projects?.slug}`).includes(needle))
+          .map((row) => ({
+            id: `project-${row.project_id}`,
+            type: 'project',
+            sourceId: row.project_id,
+            name: row.projects?.name || 'Untitled project',
+            context: 'Tracked project',
+          }));
+
+        if (!cancelled && !taskError && !customTaskError && !projectError) {
+          setSearchResults([...matchingTasks.slice(0, 5), ...matchingProjects.slice(0, 5)]);
+        } else if (!cancelled) {
+          setSearchResults([]);
+          setSearchError(true);
+        }
+      } catch (error) {
+        console.error('Unable to search tracker data:', error);
+        if (!cancelled) {
+          setSearchResults([]);
+          setSearchError(true);
+        }
+      } finally {
+        if (!cancelled) setSearchLoading(false);
+      }
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeout);
+    };
+  }, [searchQuery, user]);
 
   /**
    * Loads the live stats (streak / XP / SAIL) plus the profile bits the header
@@ -381,11 +505,11 @@ export default function TrackerHeader() {
 
   /* ---- Close the mobile drawer whenever the route changes ---- */
   useEffect(() => {
-    setMobileMenuOpen(false);
+    const timeout = window.setTimeout(() => setMobileMenuOpen(false), 0);
+    return () => window.clearTimeout(timeout);
   }, [location.pathname]);
 
   const authenticated = !!user;
-
   const isActive = useCallback(
     (to, exact) => (exact ? location.pathname === to : location.pathname.startsWith(to)),
     [location.pathname],
@@ -416,6 +540,18 @@ export default function TrackerHeader() {
   /** Seed the generated colour on whatever identifier we actually have. */
   const avatarSeed = profile.username || user?.email || user?.id || '';
   const avatarInitial = (displayName || 'S').trim()[0]?.toUpperCase() || 'S';
+
+  const openSearchResult = (result) => {
+    setSearchQuery('');
+    setIsSearchFocused(false);
+
+    if (result.type === 'task') {
+      navigate(`/tracker/tasks?search=${encodeURIComponent(result.name)}&task=${encodeURIComponent(result.taskId)}`);
+      return;
+    }
+
+    navigate(`/tracker/airdrops?search=${encodeURIComponent(result.name)}&project=${encodeURIComponent(result.sourceId)}`);
+  };
 
   /**
    * A broken remote avatar falls back to the generated colour tile. Storing the
@@ -496,24 +632,35 @@ export default function TrackerHeader() {
                   <div className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                     Suggestions
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <button
-                      type="button"
-                      onClick={() => navigate('/tracker/tasks')}
-                      className="flex items-center gap-3 rounded-lg px-2 py-2 text-left text-xs font-semibold text-slate-600 transition duration-150 hover:bg-violet-50 hover:text-violet-600"
-                    >
-                      <Search className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
-                      Search tasks for &quot;{searchQuery}&quot;
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => navigate('/tracker/airdrops')}
-                      className="flex items-center gap-3 rounded-lg px-2 py-2 text-left text-xs font-semibold text-slate-600 transition duration-150 hover:bg-violet-50 hover:text-violet-600"
-                    >
-                      <LayoutGrid className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
-                      Search projects for &quot;{searchQuery}&quot;
-                    </button>
-                  </div>
+                  {searchLoading ? (
+                    <div className="px-2 py-2 text-xs font-semibold text-slate-400">Searching...</div>
+                  ) : searchError ? (
+                    <div className="px-2 py-2 text-xs font-semibold text-slate-400">Unable to load suggestions.</div>
+                  ) : searchResults.length ? (
+                    <div className="flex flex-col gap-1">
+                      {searchResults.map((result) => (
+                        <button
+                          key={result.id}
+                          type="button"
+                          onMouseDown={(event) => event.preventDefault()}
+                          onClick={() => openSearchResult(result)}
+                          className="flex items-center gap-3 rounded-lg px-2 py-2 text-left text-xs font-semibold text-slate-600 transition duration-150 hover:bg-violet-50 hover:text-violet-600"
+                        >
+                          {result.type === 'task' ? (
+                            <Search className="h-3.5 w-3.5 shrink-0 text-slate-400" aria-hidden="true" />
+                          ) : (
+                            <LayoutGrid className="h-3.5 w-3.5 shrink-0 text-slate-400" aria-hidden="true" />
+                          )}
+                          <span className="min-w-0 truncate">{result.name}</span>
+                          <span className="ml-auto max-w-[100px] truncate text-[10px] font-medium text-slate-400">
+                            {result.context}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="px-2 py-2 text-xs font-semibold text-slate-400">No matching tasks or projects.</div>
+                  )}
                 </div>
               )}
             </div>

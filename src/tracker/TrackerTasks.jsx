@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import {
   CalendarClock, CheckCircle2, ChevronDown, CircleAlert, ClipboardList, Clock3,
@@ -27,12 +28,13 @@ const EMPTY_FORM = { name: '', notes: '', priority: 'Medium', recurrence: 'once'
 
 
 export default function TrackerTasks() {
+  const [searchParams] = useSearchParams();
   const [tasks, setTasks] = useState([]);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(() => searchParams.get('search') || '');
   const [filters, setFilters] = useState({ project: 'all', status: 'all', recurrence: 'all' });
-  const [selectedId, setSelectedId] = useState(null);
+  const [selectedId, setSelectedId] = useState(() => searchParams.get('task') || null);
   const [view, setView] = useState('list');
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);

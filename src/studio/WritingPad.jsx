@@ -31,25 +31,29 @@ function evaluateDraft(draft) {
   const words = text.split(/\s+/).filter(Boolean);
   const sentences = text.split(/[.!?]+/).map((sentence) => sentence.trim()).filter(Boolean);
   const averageSentenceLength = sentences.length ? words.length / sentences.length : words.length;
-  const hasActionList = /(^|\n)(→|•|-|\d+[.)])\s/m.test(text);
-  const hasCTA = /\?|\b(save|bookmark|reply|follow|try|share|comment|join)\b/i.test(lines.at(-1) || '');
-  const hasContext = /\b(building|simple terms|at its core|problem|matters|because)\b/i.test(text);
-  const hasTake = /\b(i think|my take|impression|optimistic|execution|worth watching|personally)\b/i.test(text);
+  const framework = {
+    hook: firstLine.length >= 10
+      && firstLine.length <= 120
+      && /[?!:—]|\b(just|finally|early|found|tested|interesting|why|how|most people|worth|live|new|attention|watching)\b/i.test(firstLine),
+    context: /\b(building|simple terms|at its core|problem|what exactly)\b/i.test(text),
+    why: /\b(why|because|reason|matters|important|meaning)\b/i.test(text),
+    feature: /\b(feature|different|instead of|standout|built|uses|catch)\b/i.test(text),
+    action: /(^|\n)(→|•|-|\d+[.)])\s|\b(step|go to|connect|claim|test|join)\b/im.test(text),
+    details: /\b(careful|don't|mistake|remember|note|require|need|before you|make sure)\b/i.test(text),
+    take: /\b(i think|my take|impression|optimistic|execution|worth watching|personally|curious)\b/i.test(text),
+    cta: /\?|\b(save|bookmark|reply|follow|try|share|comment|let me know)\b/i.test(text),
+  };
   const genericCount = GENERIC_PHRASES.filter((phrase) => text.toLowerCase().includes(phrase)).length;
 
-  let hook = 48;
+  let hook = framework.hook ? 62 : 28;
   if (firstLine.length >= 18 && firstLine.length <= 90) hook += 18;
   if (/\b(just|finally|early|found|tested|interesting|why|how|do not|most people)\b/i.test(firstLine)) hook += 14;
   if (/[?:]/.test(firstLine)) hook += 8;
   if (firstLine.length > 120) hook -= 18;
   if (genericCount) hook -= genericCount * 7;
 
-  let structure = 38;
-  if (lines.length >= 3) structure += 16;
-  if (hasContext) structure += 12;
-  if (hasActionList) structure += 14;
-  if (hasTake) structure += 10;
-  if (hasCTA) structure += 10;
+  const matchedFrameworkParts = Object.values(framework).filter(Boolean).length;
+  const structure = (matchedFrameworkParts / 8) * 100;
 
   let readability = 56;
   if (averageSentenceLength <= 18) readability += 16;
@@ -66,38 +70,41 @@ function evaluateDraft(draft) {
   scores.overall = Math.round((scores.hook * 0.4) + (scores.structure * 0.3) + (scores.readability * 0.3));
 
   const feedback = [];
-  if (scores.hook < 75) feedback.push('Tighten the first line around one specific result, tension, or discovery.');
-  if (!hasContext) feedback.push('Add one plain-language context line explaining why the update matters.');
-  if (!hasActionList) feedback.push('Turn the practical value into a short, scannable action list.');
-  if (!hasCTA) feedback.push('Close with a direct question or a clear save/bookmark prompt.');
+  if (!framework.hook) feedback.push("Add a 'HOOK' first line with a specific result, tension, question, or discovery.");
+  if (!framework.context) feedback.push("Add 'CONTEXT' explaining in simple terms what is building, what happened, or what problem is being solved.");
+  if (!framework.why) feedback.push("Add a 'WHY' line explaining why the user should care.");
+  if (!framework.feature) feedback.push("Include a 'FEATURE' line highlighting what is different or built to stand out.");
+  if (!framework.action) feedback.push("Add an 'ACTION' section with a step, task, or scannable instruction.");
+  if (!framework.details) feedback.push("Include 'DETAILS' to warn users of potential mistakes or requirements.");
+  if (!framework.take) feedback.push("Add your personal 'TAKE' with an impression, opinion, or open question.");
+  if (!framework.cta) feedback.push("Finish with a 'CTA' asking readers to reply, save, share, or let you know their view.");
   if (averageSentenceLength > 18) feedback.push('Shorten the longest sentences to improve mobile readability.');
-  if (!feedback.length) feedback.push('The framework is complete. Keep the specific details and publish with minimal edits.');
+  if (!feedback.length) feedback.push('All 8 framework parts are present. Keep the specific details and publish with minimal edits.');
 
-  return { scores, feedback: feedback.slice(0, 3) };
+  return { scores, feedback };
 }
 
 function generateVariations(draft) {
   const cleanDraft = draft.trim();
   const lines = cleanDraft.split('\n').map((line) => line.trim()).filter(Boolean);
   const firstLine = lines[0] || '[Project] just opened access.';
-  const body = lines.slice(1).join('\n\n') || cleanDraft;
-  const excerpt = body.length > 360 ? `${body.slice(0, 357).trim()}...` : body;
+  const sourceText = lines.slice(1).join(' ') || cleanDraft;
 
   return [
     {
-      title: 'Punchy',
-      subtitle: 'Fast hook, clear action',
-      text: `${firstLine}\n\nHere is what early users need to know:\n\n${excerpt}\n\n→ Verify the official link\n→ Test the core flow\n→ Save your activity\n\nI would treat this as an early experiment worth tracking.\n\nBookmark this for later.`,
+      title: 'The Full Framework',
+      subtitle: 'Hook, Context, Why, Feature, Action, Details, Take, CTA',
+      text: `${firstLine}\n\nIn simple terms, here is the context: ${sourceText}\n\nWhy this matters: it gives users a clear reason to understand the opportunity before acting.\n\nThe standout feature is how the core idea is built differently around the user experience.\n\nHere is how to test it:\n→ Go to the official app\n→ Connect your wallet\n→ Complete the first step\n\nBefore you start, make sure you use official links and note every requirement. Do not rush the process.\n\nMy take: I think the idea is worth watching, but execution will matter.\n\nWould you try it? Save this and let me know what you think.`,
     },
     {
-      title: 'Educational',
-      subtitle: 'Context before the playbook',
-      text: `Most people will focus on the headline. The product is the more interesting part.\n\nIn simple terms:\n\n${cleanDraft}\n\nThe practical takeaway is to test the workflow, document the friction, and watch how the product improves.\n\nWhat is your take?`,
+      title: 'The Short Update',
+      subtitle: 'Hook, Context, Take, CTA',
+      text: `${firstLine}\n\nIn simple terms, here is what happened: ${sourceText}\n\nMy take: I think this is worth watching, and I am curious to see what comes next.\n\nWhat do you think? Save this update and let me know.`,
     },
     {
-      title: 'Curiosity',
-      subtitle: 'Open loop, personal verdict',
-      text: `The interesting part is not what you think.\n\n${excerpt}\n\nThe product is simple. The thesis is not.\n\nFor now, I am cautiously optimistic, but execution will matter.\n\nSave this before you start testing.`,
+      title: 'The Tutorial',
+      subtitle: 'Hook, Context, Action, Details, CTA',
+      text: `${firstLine}\n\nIn simple terms, here is the context: ${sourceText}\n\nHere is how to test it:\n→ Go to the official app\n→ Connect your wallet\n→ Claim what you need\n→ Complete each step\n\nBefore you start, make sure you are on the correct network. Do not make the mistake of using unofficial links.\n\nReady to try it? Save this guide and share it with someone who needs the steps.`,
     },
   ];
 }
@@ -122,7 +129,7 @@ function EmptyResults({ onStart }) {
       <Zap className="mx-auto mb-3 text-slate-400" size={28} />
       <h3 className="text-sm font-black text-slate-800">No evaluation yet</h3>
       <p className="mx-auto mt-1.5 max-w-xs text-xs leading-relaxed text-slate-500">
-        Draft a post, then score it against the Hook - Context - Action - Take - CTA framework.
+        Draft a post, then score it against the full 8-part @0xdalai wording framework.
       </p>
       <button type="button" onClick={onStart} className="mt-4 text-xs font-black text-blue-600 hover:text-blue-700">
         Start writing
@@ -267,7 +274,7 @@ export default function WritingPad() {
           <div className="overflow-hidden border border-slate-200 bg-white shadow-sm focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100">
             <textarea ref={editorRef} value={draft} onChange={(event) => { setDraft(event.target.value); setAnalysis(null); }} placeholder="Write a raw post idea or inject a line from the library..." rows={18} className="block min-h-[420px] w-full resize-none p-4 text-sm font-medium leading-relaxed text-slate-900 outline-none placeholder:text-slate-400" />
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 bg-slate-50 px-3 py-3">
-              <span className="text-[10px] font-bold text-slate-400">Hook - Context - Action - Take - CTA</span>
+              <span className="text-[10px] font-bold text-slate-400">HOOK - CONTEXT - WHY - FEATURE - ACTION - DETAILS - TAKE - CTA</span>
               <div className="flex items-center gap-2">
                 <button type="button" onClick={() => setShowPreview((current) => !current)} className="inline-flex items-center gap-1.5 border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-600 hover:text-slate-900"><Eye size={13} /> {showPreview ? 'Editor' : 'Preview'}</button>
                 <button type="button" onClick={scoreAndPolish} disabled={isEvaluating || !draft.trim()} className="inline-flex items-center gap-1.5 bg-blue-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-700 disabled:bg-slate-300"><Sparkles size={13} /> Score Post</button>
@@ -276,7 +283,7 @@ export default function WritingPad() {
           </div>
           {showPreview && <div className="mt-3 border border-slate-200 bg-slate-50 p-4"><div className="mb-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500"><Eye size={13} /> Post Preview</div><p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-800">{draft || 'Your preview will appear here.'}</p></div>}
           <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-            {[['40%', 'Hook Strength'], ['30%', 'Structure'], ['30%', 'Readability']].map(([value, label]) => <div key={label} className="border border-slate-200 bg-white px-2 py-3"><div className="text-sm font-black text-slate-800">{value}</div><div className="mt-0.5 text-[10px] font-bold text-slate-400">{label}</div></div>)}
+            {[['40%', 'Hook Impact'], ['30%', '8-Part Framework'], ['30%', 'Readability']].map(([value, label]) => <div key={label} className="border border-slate-200 bg-white px-2 py-3"><div className="text-sm font-black text-slate-800">{value}</div><div className="mt-0.5 text-[10px] font-bold text-slate-400">{label}</div></div>)}
           </div>
         </section>
 
@@ -285,7 +292,7 @@ export default function WritingPad() {
           {!analysis ? <EmptyResults onStart={() => setActiveMobileTab('editor')} /> : <div className="space-y-4">
             <div className="border border-slate-200 bg-white p-4 shadow-sm">
               <div className="mb-4 flex items-end justify-between"><div><div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Overall score</div><div className="mt-1 text-4xl font-black text-slate-900">{analysis.scores.overall}<span className="text-lg text-slate-400">/100</span></div></div><Lightbulb className="text-amber-500" size={24} /></div>
-              <div className="space-y-3"><ScoreBar label="Hook Strength" value={analysis.scores.hook} colorClass="bg-blue-600" /><ScoreBar label="Structure / Flow" value={analysis.scores.structure} colorClass="bg-violet-600" /><ScoreBar label="Readability" value={analysis.scores.readability} colorClass="bg-emerald-600" /></div>
+              <div className="space-y-3"><ScoreBar label="Hook Impact" value={analysis.scores.hook} colorClass="bg-blue-600" /><ScoreBar label="8-Part Framework" value={analysis.scores.structure} colorClass="bg-violet-600" /><ScoreBar label="Readability" value={analysis.scores.readability} colorClass="bg-emerald-600" /></div>
               <div className="mt-4 border border-slate-100 bg-slate-50 p-3"><div className="mb-2 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-500"><Lightbulb size={13} /> Editor notes</div><ul className="space-y-1.5 text-xs font-medium leading-relaxed text-slate-600">{analysis.feedback.map((note) => <li key={note}>- {note}</li>)}</ul></div>
             </div>
             <div className="flex items-center justify-between"><h2 className="text-xs font-black uppercase tracking-widest text-slate-500">Polished variations</h2><span className="text-[10px] font-bold text-slate-400">1-click copy</span></div>
