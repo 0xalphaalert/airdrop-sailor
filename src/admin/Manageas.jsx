@@ -69,6 +69,7 @@ export default function Manageas() {
   const [generatedFoundersPrompt, setGeneratedFoundersPrompt] = useState('');
   const [generatedTokenomicsPrompt, setGeneratedTokenomicsPrompt] = useState('');
   const [generatedCompetitorPrompt, setGeneratedCompetitorPrompt] = useState('');
+  const [generatedMasterPrompt, setGeneratedMasterPrompt] = useState('');
 
   // --- NEW: INVESTOR TAG STATES ---
   const [vcList, setVcList] = useState([]);
@@ -172,6 +173,76 @@ export default function Manageas() {
   };
 
   // --- AI PROMPT GENERATORS ---
+  const generateMasterAIPrompt = () => {
+    const prompt = `You are a cryptocurrency data researcher. Analyze the project described below and output ONLY a valid JSON object containing four specific keys. Do NOT output markdown formatting or code blocks.
+
+---
+CONTEXT DATA:
+Project Name: ${formData.name || 'N/A'}
+Twitter/X Profile: ${formData.x_link || 'N/A'}
+Amount Raised: ${formData.funding || 'N/A'}
+Lead Investors: ${formData.lead_investors || 'N/A'}
+Project Description: ${formData.description || 'N/A'}
+---
+
+Use this exact JSON schema:
+{
+  "master_research": {
+    "summary": "1-2 sentence overview of the project and its goals",
+    "funding_strength": "Brief analysis of funding",
+    "social_signals": "Brief analysis of social presence",
+    "airdrop_signals": "Brief analysis of airdrop potential"
+  },
+  "master_founders": [
+    {
+      "name": "Founder Name",
+      "role": "CEO / Co-founder / CTO",
+      "background": "Ultra-short background, max 4-7 words",
+      "twitter_handle": "exact_handle_without_@",
+      "linkedin_url": "https://linkedin.com/in/..."
+    }
+  ],
+  "master_tokenomics": {
+    "ticker": "TOKEN",
+    "total_supply": "1000000000",
+    "community_allocation_percentage": 50.5,
+    "investor_allocation_percentage": 15.0,
+    "team_allocation_percentage": 20.0,
+    "ecosystem_allocation_percentage": 14.5,
+    "tge_date": "Q3 2024 / confirmed date / null",
+    "vesting_notes": "Brief details on cliffs"
+  },
+  "master_competitors": {
+    "project_similarity": "Brief 1-2 sentence comparison explaining market differentiators.",
+    "competitors": [
+      {
+        "name": "Competitor Name",
+        "domain": "competitordomain.com",
+        "x_url": "https://x.com/exact_profile_handle",
+        "followers": "450K",
+        "past_airdrops": ["Season 1 (2024)"],
+        "average_airdrop_usd": 1250
+      }
+    ]
+  }
+}`;
+    setGeneratedMasterPrompt(prompt);
+  };
+
+  const handleMasterAIPaste = (value) => {
+    try {
+      const data = JSON.parse(value);
+      setFormData(prev => ({
+        ...prev,
+        ai_research_data: data.master_research ? JSON.stringify(data.master_research, null, 2) : prev.ai_research_data,
+        founders_details: data.master_founders ? JSON.stringify(data.master_founders, null, 2) : prev.founders_details,
+        tokenomics_details: data.master_tokenomics ? JSON.stringify(data.master_tokenomics, null, 2) : prev.tokenomics_details,
+        competitor_analysis: data.master_competitors ? JSON.stringify(data.master_competitors, null, 2) : prev.competitor_analysis
+      }));
+    } catch (e) {
+      // Ignore parsing errors while they are typing/pasting
+    }
+  };
   const generateAIPrompt = () => {
     let prompt = '';
     if (activeTab === 'projects') {
@@ -865,6 +936,42 @@ Ensure there are a maximum of 5 competitor objects inside the "competitors" arra
                       <div className="md:col-span-2">
                         <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1">Project Description</label>
                         <textarea value={formData.description || ''} onChange={(e) => handleInputChange('description', e.target.value)} rows="2" className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 text-sm text-slate-900 resize-none" placeholder="Short bio..." />
+                      </div>
+                      {/* --- MASTER AI AUTO-FILL --- */}
+                      <div className="md:col-span-2 pt-6 mt-4 border-t-2 border-slate-200">
+                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-100 shadow-sm">
+                          <label className="block text-xs font-black text-indigo-700 uppercase tracking-widest mb-2 flex items-center gap-1"><Sparkles size={14}/> Ultimate AI Auto-Fill (All 4 Modules)</label>
+                          <p className="text-xs text-indigo-600 mb-3 font-medium">Generate one master prompt to fetch Research, Founders, Tokenomics, and Competitors simultaneously.</p>
+                          <div className="flex items-center gap-2 mb-3">
+                            <button type="button" onClick={generateMasterAIPrompt} className="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 shadow-sm transition-colors">
+                              ⚡ Generate Master Prompt
+                            </button>
+                            <button 
+                              type="button"
+                              onClick={() => navigator.clipboard.writeText(generatedMasterPrompt)} 
+                              disabled={!generatedMasterPrompt}
+                              className={`px-4 py-2 text-xs font-bold rounded-lg shadow-sm ${
+                                generatedMasterPrompt ? 'bg-white text-indigo-700 hover:bg-slate-50 border border-indigo-200' : 'bg-slate-50 text-slate-400 cursor-not-allowed border border-slate-200'
+                              }`}
+                            >
+                              📋 Copy Master Prompt
+                            </button>
+                          </div>
+                          {generatedMasterPrompt && (
+                            <textarea 
+                              value={generatedMasterPrompt || ''} 
+                              readOnly
+                              rows="3" 
+                              className="w-full px-3 py-2 bg-slate-900 text-indigo-300 font-mono text-xs border border-slate-800 rounded-lg mb-3"
+                            />
+                          )}
+                          <textarea 
+                            onChange={(e) => handleMasterAIPaste(e.target.value)} 
+                            rows="2" 
+                            className="w-full px-3 py-3 bg-white text-slate-800 font-mono text-[11px] border border-indigo-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none shadow-inner" 
+                            placeholder="Paste the Master JSON output here. The 4 boxes below will auto-fill instantly..."
+                          />
+                        </div>
                       </div>
                       
                       {/* --- AI RESEARCH DATA --- */}
