@@ -243,6 +243,57 @@ Use this exact JSON schema:
       // Ignore parsing errors while they are typing/pasting
     }
   };
+  const generateFundraisingMasterPrompt = () => {
+    const prompt = `Analyze the following funded crypto project deeply. Output ONLY a raw JSON object with no markdown formatting and no code blocks.
+
+---
+CONTEXT DATA:
+Project Name: ${formData.project_name || ''}
+Amount Raised: ${formData.funding_amount || ''}
+Round: ${formData.round || ''}
+Lead Investors: ${formData.lead_investor || ''}
+Category: ${formData.category || ''}
+---
+
+Return EXACTLY this JSON structure containing both AI Research and Founders:
+{
+  "ai_research_data": {
+    "summary": "A punchy, 2-sentence bio of the project and what they are building.",
+    "early_tasks": [
+      { "task_name": "Name of early task (e.g. Join Discord)", "link": "https://link-to-task" }
+    ],
+    "analysis": "Your short 1-2 sentence analysis on funding strength, founder credibility, and airdrop potential.",
+    "airdrop_score": "Score out of 100 (e.g. 85)",
+    "funding_score": "Score out of 100 (e.g. 90)"
+  },
+  "founders_details": [
+    {
+      "name": "Founder Name",
+      "role": "CEO / Co-founder / CTO",
+      "background": "Ultra-short background, maximum 4 to 7 words",
+      "twitter_handle": "exact_handle_without_@",
+      "linkedin_url": "https://linkedin.com/in/..."
+    }
+  ]
+}`;
+    setGeneratedMasterPrompt(prompt);
+  };
+
+  const handleFundraisingMasterPaste = (value) => {
+    try {
+      const data = JSON.parse(value);
+      if (data.ai_research_data || data.founders_details) {
+        setFormData(prev => ({
+          ...prev,
+          ai_research_data: data.ai_research_data ? JSON.stringify(data.ai_research_data, null, 2) : prev.ai_research_data,
+          founders_details: data.founders_details ? JSON.stringify(data.founders_details, null, 2) : prev.founders_details,
+          sector: data.ai_research_data?.summary ? data.ai_research_data.summary : prev.sector
+        }));
+      }
+    } catch (e) {
+      // Ignore parsing errors while typing
+    }
+  };
   const generateAIPrompt = () => {
     let prompt = '';
     if (activeTab === 'projects') {
@@ -1371,6 +1422,43 @@ Ensure there are a maximum of 5 competitor objects inside the "competitors" arra
                   <div className="md:col-span-2">
                     <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Sector / Bio (Auto-fills from AI)</label>
                     <textarea value={formData.sector || ''} onChange={(e) => handleInputChange('sector', e.target.value)} rows="3" className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 text-sm text-slate-900 resize-none" />
+                  </div>
+
+                  {/* --- FUNDRAISING MASTER AI AUTO-FILL --- */}
+                  <div className="md:col-span-2 pt-6 mt-2 border-t border-slate-100">
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-100 shadow-sm">
+                      <label className="mb-2 flex items-center gap-1 text-xs font-black uppercase tracking-widest text-indigo-700"><Sparkles size={14}/> Dual AI Auto-Fill (Research & Founders)</label>
+                      <p className="mb-3 text-xs font-medium text-indigo-600">Generate one master prompt to fetch AI Research Data and Founders Details simultaneously.</p>
+                      <div className="mb-3 flex items-center gap-2">
+                        <button type="button" onClick={generateFundraisingMasterPrompt} className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition-colors hover:bg-indigo-700">
+                          ⚡ Generate Master Prompt
+                        </button>
+                        <button 
+                          type="button"
+                          onClick={() => navigator.clipboard.writeText(generatedMasterPrompt)} 
+                          disabled={!generatedMasterPrompt}
+                          className={`rounded-lg px-4 py-2 text-xs font-bold shadow-sm ${
+                            generatedMasterPrompt ? 'border border-indigo-200 bg-white text-indigo-700 hover:bg-slate-50' : 'cursor-not-allowed border border-slate-200 bg-slate-50 text-slate-400'
+                          }`}
+                        >
+                          📋 Copy Master Prompt
+                        </button>
+                      </div>
+                      {generatedMasterPrompt && (
+                        <textarea 
+                          value={generatedMasterPrompt || ''} 
+                          readOnly
+                          rows={3} 
+                          className="mb-3 w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 font-mono text-xs text-indigo-300"
+                        />
+                      )}
+                      <textarea 
+                        onChange={(e) => handleFundraisingMasterPaste(e.target.value)} 
+                        rows={2} 
+                        className="w-full resize-none rounded-lg border border-indigo-300 bg-white px-3 py-3 font-mono text-[11px] text-slate-800 shadow-inner focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+                        placeholder="Paste the dual JSON output here. The 2 boxes below will auto-fill instantly..."
+                      />
+                    </div>
                   </div>
                   
                   {/* --- NEW: FOUNDERS DETAILS IN FUNDRAISING --- */}
