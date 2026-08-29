@@ -41,6 +41,7 @@ export default function AdminLayout() {
     { id: 'research', path: '/admin/research-daily', label: 'Research Intel', icon: '📡', badge: true },
     { id: 'studiodaily', path: '/admin/studio-daily', label: 'Studio Tasks', icon: '🎨', badge: true },
     { id: 'overview', path: '/admin', label: 'Command Center', icon: '🧠' },
+    { id: 'health', path: '/admin/health', label: 'System Health', icon: '⚡' },
     { id: 'manageas', path: '/admin/manage', label: 'Manage Core DB', icon: '⚙️' },
     { id: 'content', path: '/admin/content', label: 'Content Manager', icon: '📝' },
     { id: 'earlylist', path: '/admin/early', label: 'VC Profiles', icon: '📡' },

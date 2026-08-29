@@ -709,6 +709,63 @@ export default function CreatorStudio() {
       return `${idx + 1}. ${pName} — ${amt}`;
     }).join('\n');
 
+    // --- TOP 5 EARLY ALPHA / WHITELIST BUILDERS ---
+    const top5EarlyXList = selectedList.slice(0, 5).map((item, idx) => {
+      const name = item.name || item.project_name || 'Project';
+      
+      // Grab a short description
+      let desc = item.description || `${name} is an early-stage protocol currently rolling out its ecosystem architecture.`;
+      if (desc.length > 180) desc = desc.split('.')[0] + '.'; // Keep it to one sentence for Twitter
+
+      const link = item.x_link || item.link || 'https://airdropsailor.xyz';
+      
+      // 1. Multi-task handling: Grab the first available task's steps
+      let steps = [];
+      if (item.tasks && Array.isArray(item.tasks) && item.tasks.length > 0) {
+        const t = item.tasks[0]; // Grab the primary task for the thread
+        const postJson = parseField(t.post_json);
+        
+        if (postJson?.steps && Array.isArray(postJson.steps)) {
+          steps = postJson.steps.slice(0, 4).map(s => `• ${s.action || s.name}`);
+        } else if (t.tutorial_markdown) {
+          const matches = t.tutorial_markdown.match(/\d+\.\s+([^\n]+)/g);
+          if (matches) steps = matches.slice(0, 4).map(s => `• ${s.replace(/^\d+\.\s+/, '')}`);
+        }
+      }
+      
+      // 2. Fallback steps if no tasks are mapped yet
+      if (steps.length === 0) {
+        steps = [
+          '• Join the waitlist / Discord', 
+          '• Explore the ecosystem', 
+          '• Check current rewards & missions', 
+          '• Claim available early roles'
+        ];
+      }
+
+      // 3. Extract "Why we're watching" from AI research data
+      let whyWatching = `${name} is currently in an active ecosystem-growth phase, with early-user participation and rewards playing a major role.`;
+      const aiData = parseField(item.ai_research_data);
+      if (aiData?.summary) {
+         whyWatching = aiData.summary; // Pulls from your DB's JSON structure
+      }
+
+      return `${idx + 1}/5 — ${name}\n${desc}\n\nWhat to do:\n${steps.join('\n')}\n\n🔗 ${link}\n\nWhy we're watching:\n${whyWatching}`;
+    }).join('\n\n');
+
+    const top5EarlyTelegramList = selectedList.slice(0, 5).map((item, idx) => {
+      const name = item.name || item.project_name || 'Project';
+      const link = item.x_link || item.link || 'https://airdropsailor.xyz';
+      return `🔹 ${idx + 1}. [${name}](${link}) — Early Access / Whitelist active.`;
+    }).join('\n\n');
+
+    const top5EarlyFarcasterList = selectedList.slice(0, 5).map((item, idx) => {
+      const name = item.name || item.project_name || 'Project';
+      return `• ${idx + 1}. ${name} — Early access phase.`;
+    }).join('\n');
+
+    const top5EarlyBinanceList = top5EarlyXList; // Reuse the X thread format for Binance Square
+
     // --- TOP 10 TASKS THIS WEEK LIST BUILDERS (ADDITIVE) ---
     const top10TasksXList = selectedList.slice(0, 10).map((item) => {
       const projObj = item.projects || item;
@@ -869,7 +926,11 @@ export default function CreatorStudio() {
         .replaceAll('{{eth_price}}', ethPrice)
         .replaceAll('{{sol_price}}', solPrice)
         .replaceAll('{{eth_gwei}}', ethGwei)
-        .replaceAll('{{market_sentiment}}', marketSentiment);
+        .replaceAll('{{market_sentiment}}', marketSentiment)
+        .replaceAll('{{top_5_early_x_list}}', top5EarlyXList)
+        .replaceAll('{{top_5_early_telegram_list}}', top5EarlyTelegramList)
+        .replaceAll('{{top_5_early_farcaster_list}}', top5EarlyFarcasterList)
+        .replaceAll('{{top_5_early_binance_list}}', top5EarlyBinanceList);
     };
 
     // --- DATA PARSING FOR SINGLE PROJECT / TASK PLACEHOLDERS ---

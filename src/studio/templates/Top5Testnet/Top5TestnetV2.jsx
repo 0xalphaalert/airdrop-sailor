@@ -1,120 +1,156 @@
 import React from 'react';
+import { Anchor, Shield } from "lucide-react";
+
+// --- 1. CLOUD ASSET PATHS ---
+// We are ONLY using your brand logo here. No decorative 3D PNGs.
+const BASE_URL = "https://ptobheftxcjiqobxgeal.supabase.co/storage/v1/object/public/Illustrations";
+const logoIconImg = `${BASE_URL}/logo-icon.png`; 
+
+function Sparkle({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+      <path d="M12 0c.9 6.6 5.4 11.1 12 12-6.6.9-11.1 5.4-12 12-.9-6.6-5.4-11.1-12-12C6.6 11.1 11.1 6.6 12 0z" />
+    </svg>
+  );
+}
 
 export default function Top5TestnetV2({ data }) {
-  // 1. Safely extract selected items from the CreatorStudio prop structure
-  const selectedItems = data?.selectedItems || (Array.isArray(data) ? data : []);
+  const currentDate = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase();
 
-  const fallbackData = [
-    { id: 1, raw: { name: 'Nemesisdottrade', logo_url: 'https://unavatar.io/twitter/Nemesisdottrade', description: 'The first permissionless margin trading protocol.', tier: 'Tier 1', funding: '$20M', social_score: 20, total_time_estimate: '10', total_cost_estimate: '0' } },
-    { id: 2, raw: { name: 'dTelecom', logo_url: null, description: 'DePIN infra for real-time voice, video & AI communication.', tier: 'Tier 2', funding: '$1.2M', social_score: 854, total_time_estimate: '15', total_cost_estimate: '0' } },
-    { id: 3, raw: { name: 'Berachain', logo_url: null, description: 'EVM-equivalent L1 built on Proof of Liquidity.', tier: 'Tier 1', funding: '$100M', social_score: 95, total_time_estimate: '30', total_cost_estimate: '0' } },
-    { id: 4, raw: { name: 'Plume Network', logo_url: null, description: 'Modular L2 for RWA onboarding and compliance.', tier: 'Tier 2', funding: '$10M', social_score: 45, total_time_estimate: '5', total_cost_estimate: '0' } },
-    { id: 5, raw: { name: 'Monad', logo_url: null, description: 'Ultra-high performance EVM L1 blockchain.', tier: 'Tier 1', funding: '$225M', social_score: 99, total_time_estimate: '20', total_cost_estimate: '0' } },
+  // --- 2. MULTI-ITEM EXTRACTION & FALLBACKS ---
+  const selectedItems = data?.selectedItems || [];
+  
+  // Exact fallbacks matching your Top 5 Testnet mockup
+  const fallbackItems = [
+    { name: "Monad Testnet", tier: "Tier 1", logo_url: `https://api.dicebear.com/7.x/shapes/svg?seed=Monad` },
+    { name: "Jupiter Testnet", tier: "Tier 1", logo_url: `https://api.dicebear.com/7.x/shapes/svg?seed=Jupiter` },
+    { name: "ZetaChain Testnet", tier: "Tier 1", logo_url: `https://api.dicebear.com/7.x/shapes/svg?seed=ZetaChain` },
+    { name: "Aptos Testnet", tier: "Tier 2", logo_url: `https://api.dicebear.com/7.x/shapes/svg?seed=Aptos` },
+    { name: "Berachain Testnet", tier: "Tier 2", logo_url: `https://api.dicebear.com/7.x/shapes/svg?seed=Berachain` }
   ];
 
-  const displayData = selectedItems.length > 0 ? selectedItems.slice(0, 5) : fallbackData;
+  // Map exactly 5 items (real data or fallbacks)
+  const displayItems = Array(5).fill(null).map((_, i) => {
+    const rawData = selectedItems[i]?.raw || fallbackItems[i];
+    return {
+      name: rawData.name || rawData.project_name || `Project ${i + 1}`,
+      tier: rawData.tier || rawData.projects?.tier || fallbackItems[i].tier,
+      logoUrl: rawData.logo_url || rawData.project_logo || rawData.projects?.logo_url || fallbackItems[i].logo_url
+    };
+  });
 
   return (
-    <div className="w-[1200px] h-[675px] bg-[#1A45D1] flex flex-col justify-between p-8 font-sans overflow-hidden">
+    // --- 3. STRICT PIXEL-PERFECT WRAPPER (1200x675) ---
+    <div className="w-[1200px] h-[675px] flex flex-col justify-between bg-[#1142FE] p-5 font-sans relative overflow-hidden box-border">
       
-      {/* OUTER HEADER */}
-      <div className="flex justify-between items-center text-blue-200 font-bold tracking-widest uppercase text-xs px-2">
-        <span>AirdropSailor</span>
-        <span>Early Alpha Radar</span>
-        <span>{new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase()}</span>
-      </div>
+      {/* Top Header */}
+      <header className="flex items-center justify-between px-6 text-white/90 shrink-0 h-[30px] z-20">
+        <span className="text-[11px] font-black tracking-[0.3em] uppercase">AIRDROPSAILOR</span>
+        <span className="text-[11px] font-black tracking-[0.3em] uppercase">TOP 5 TESTNET PROJECTS</span>
+        <span className="text-[11px] font-black tracking-[0.3em] uppercase">{currentDate}</span>
+      </header>
 
-      {/* MAIN WHITE CARD */}
-      <div className="flex-1 w-full max-w-[1100px] mx-auto bg-[#F4F7FB] rounded-[2.5rem] shadow-2xl flex flex-col p-6 my-4 border border-blue-500/30">
+      {/* Massive White Canvas Card - Strict Height */}
+      <main className="w-full h-[560px] bg-[#F8FAFC] rounded-[2.5rem] shadow-2xl relative border-4 border-white/10 overflow-hidden">
         
-        {/* HEADER: Top 5 Early Alphas */}
-        <div className="flex justify-between items-end border-b border-slate-200/60 pb-4 mb-5 shrink-0">
-          <h1 className="text-4xl font-black text-slate-800 tracking-tight uppercase">
-            TOP 5 <span className="text-blue-600">EARLY ALPHAS</span> TO FARM
-          </h1>
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-100 rounded-lg border border-emerald-200 shadow-sm">
-            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-            <span className="text-xs font-black text-emerald-700 uppercase tracking-widest">Extremely Early</span>
+        {/* Soft Background Gradient Blob */}
+        <div className="absolute -top-40 -left-40 w-[500px] h-[500px] bg-blue-100/50 rounded-full blur-3xl opacity-80 z-0 pointer-events-none"></div>
+
+        {/* Dotted Grid Pattern (Left Side) */}
+        <div 
+          className="absolute left-8 top-[30%] opacity-20 z-0 pointer-events-none" 
+          style={{ 
+            backgroundImage: 'radial-gradient(#64748B 2px, transparent 2px)', 
+            backgroundSize: '16px 16px', 
+            width: '80px', 
+            height: '140px' 
+          }}
+        ></div>
+
+        {/* Floating Sparkles (Rebalanced since we removed the PNGs) */}
+        <Sparkle className="absolute left-[20%] top-[20%] h-6 w-6 text-blue-300/60 z-10" />
+        <Sparkle className="absolute left-[32%] top-[10%] h-4 w-4 text-blue-300/40 z-10" />
+        <Sparkle className="absolute right-[22%] top-[16%] h-8 w-8 text-blue-300/80 z-10" />
+        <Sparkle className="absolute right-[12%] top-[28%] h-5 w-5 text-blue-300/50 z-10" />
+        <Sparkle className="absolute left-[28%] bottom-[35%] h-5 w-5 text-blue-300/50 z-10" />
+
+        {/* Top Left Brand Avatar */}
+        <div className="absolute top-6 left-6 flex items-center justify-center z-20">
+          <div className="w-[72px] h-[72px] rounded-full bg-[#0B1F5E] p-[2px] shadow-lg border-2 border-slate-900 overflow-hidden relative">
+            <img
+              src={logoIconImg}
+              alt="AirdropSailor"
+              crossOrigin="anonymous"
+              className="w-full h-full object-cover rounded-full"
+            />
+            <div className="absolute bottom-0 right-0 w-6 h-6 bg-[#1142FE] rounded-full border-2 border-white flex items-center justify-center shadow-sm">
+              <Anchor size={12} className="text-white" />
+            </div>
           </div>
         </div>
 
-        {/* LIST OF 5 PROJECTS */}
-        <div className="flex-1 flex flex-col gap-3.5 relative z-10 overflow-hidden">
-          {displayData.map((item, index) => {
-            const p = item.raw || item;
-            const name = p.name || item.name || 'Unknown Project';
-            const logo = p.logo_url && p.logo_url !== 'N/A' 
-              ? p.logo_url 
-              : (item.logo || `https://api.dicebear.com/7.x/shapes/svg?seed=${name}`);
-            
-            return (
-              <div key={item.id || index} className="flex items-center justify-between bg-white rounded-[1.25rem] p-4 border border-slate-200/60 shadow-sm transition-all hover:border-blue-300">
-                
-                {/* Column 1: Rank, Logo, Name, Tier, Desc */}
-                <div className="flex items-center gap-4 w-[45%] border-r border-slate-100 pr-4">
-                  <div className="w-6 text-2xl font-black text-slate-300 text-center shrink-0">#{index + 1}</div>
-                  <div className="w-12 h-12 rounded-xl bg-slate-50 p-0.5 border border-slate-100 shrink-0 overflow-hidden">
-                    <img src={logo} className="w-full h-full rounded-lg object-cover" alt="logo" crossOrigin="anonymous" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <h3 className="text-lg font-black text-slate-900 truncate">{name}</h3>
-                      {p.tier && (
-                        <span className="px-2 py-0.5 bg-slate-900 text-white text-[9px] font-black uppercase rounded-md tracking-wider shrink-0">
-                          {p.tier}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs font-medium text-slate-500 truncate">
-                      {p.description || 'Complete early tasks to secure future allocations.'}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Column 2: Funding */}
-                <div className="flex flex-col w-[15%] px-2">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Funding</span>
-                  <span className="text-lg font-black text-slate-800">{p.funding || 'Unconfirmed'}</span>
-                </div>
-
-                {/* Column 3: Social Score */}
-                <div className="flex flex-col w-[15%] px-2">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 flex items-center gap-1">
-                    <svg className="w-3 h-3 text-blue-400" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.008 5.936H5.059z"/></svg>
-                    Social
-                  </span>
-                  <span className="text-lg font-black text-slate-800">{p.social_score != null ? p.social_score : 'N/A'}</span>
-                </div>
-
-                {/* Column 4: Cost & Time Estimate */}
-                <div className="flex flex-col w-[25%] items-end justify-center pl-4">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Cost / Time Req.</span>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-sm font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100 uppercase">
-                      ${p.total_cost_estimate || '0'}
-                    </span>
-                    <span className="text-slate-300 font-black">|</span>
-                    <span className="text-sm font-black text-blue-600 bg-blue-50 px-2 py-1 rounded-md border border-blue-100 uppercase">
-                      {p.total_time_estimate || '10'} Mins
-                    </span>
-                  </div>
-                </div>
-
-              </div>
-            );
-          })}
+        {/* Center Hero & Titles (Adjusted positioning since the top coin is gone) */}
+        <div className="absolute top-[15%] left-0 w-full flex flex-col items-center justify-center z-20">
+          <h1 className="text-[90px] leading-none font-black tracking-tight text-[#0B1529] uppercase drop-shadow-sm">
+            TOP 5
+          </h1>
+          
+          <div className="mt-4 bg-[#3B5CF8] text-white px-12 py-4 rounded-[1.25rem] shadow-[0_12px_30px_rgba(59,92,248,0.35)] text-center">
+            <span className="text-[38px] leading-none font-black tracking-tight uppercase block">
+              TESTNET PROJECTS
+            </span>
+          </div>
         </div>
 
-      </div>
+        {/* The 5 Project Cards (Strictly locked to the bottom) */}
+        <div className="absolute bottom-8 left-0 w-full px-8 grid grid-cols-5 gap-4 z-20">
+          {displayItems.map((item, idx) => (
+            <div
+              key={idx}
+              className="h-[230px] flex flex-col items-center bg-white rounded-3xl px-3 pt-8 pb-5 shadow-[0_8px_30px_rgb(0,0,0,0.05)] border border-slate-100 relative"
+            >
+              {/* Number Badge */}
+              <div className="absolute top-4 left-4 bg-[#3B5CF8] text-white text-[13px] font-black w-7 h-7 flex items-center justify-center rounded-lg shadow-sm">
+                {String(idx + 1).padStart(2, '0')}
+              </div>
 
-      {/* OUTER FOOTER */}
-      <div className="flex justify-between items-center text-blue-200 font-bold tracking-widest uppercase text-xs px-2">
-        <span>Early Alpha Radar</span>
-        <span className="flex items-center gap-2">
-           <img src="https://pddykfluvauwsfleqsfk.supabase.co/storage/v1/object/public/assets/logo-icon.png" alt="" className="w-4 h-4 " crossOrigin="anonymous" />
-           airdropsailor.xyz
+              {/* Project Logo */}
+              <div className="w-[80px] h-[80px] rounded-full border-2 border-slate-50 bg-white shadow-sm flex items-center justify-center overflow-hidden mt-1 mb-4 shrink-0 p-1">
+                <img
+                  src={item.logoUrl}
+                  alt={item.name}
+                  crossOrigin="anonymous"
+                  className="w-full h-full object-contain rounded-full"
+                />
+              </div>
+
+              {/* Project Name */}
+              <span className="text-[16px] font-black text-[#0B1529] text-center leading-tight line-clamp-2 w-full px-1">
+                {item.name}
+              </span>
+
+              {/* Tier Badge */}
+              <div className="mt-auto bg-blue-50 text-[#3B5CF8] px-3.5 py-1.5 rounded-lg flex items-center gap-1.5">
+                <Shield size={12} strokeWidth={3} className="shrink-0" />
+                <span className="text-[11px] font-black uppercase tracking-wider">
+                  {item.tier}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </main>
+
+      {/* Bottom Footer */}
+      <footer className="flex items-center justify-between px-6 text-white/90 shrink-0 h-[30px] z-20">
+        <span className="text-[11px] font-black tracking-[0.3em] uppercase">TESTNET PROJECTS</span>
+        <span className="flex items-center gap-2 text-[11px] font-black tracking-[0.3em] uppercase">
+          <span className="flex h-5 w-5 items-center justify-center rounded-full border border-white/60">
+            <Anchor size={10} strokeWidth={2.5} />
+          </span>
+          AIRDROPSAILOR.XYZ
         </span>
-      </div>
+      </footer>
 
     </div>
   );

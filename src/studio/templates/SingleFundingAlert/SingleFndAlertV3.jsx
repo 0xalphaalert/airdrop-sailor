@@ -1,190 +1,205 @@
 import React from 'react';
-import { Bell, TrendingUp, Calendar, Coins } from 'lucide-react';
+import { Anchor, Flag, Info } from "lucide-react";
+
+// --- 1. CLOUD ASSET PATHS ---
+// Pointing exactly to your Supabase "Illustrations" bucket
+const BASE_URL = "https://ptobheftxcjiqobxgeal.supabase.co/storage/v1/object/public/Illustrations";
+
+const logoIconImg = `${BASE_URL}/logo-icon.png`; 
+const moneyBagImg = `${BASE_URL}/money-bag.png`;
+
+function Sparkle({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+      <path d="M12 0c.9 6.6 5.4 11.1 12 12-6.6.9-11.1 5.4-12 12-.9-6.6-5.4-11.1-12-12C6.6 11.1 11.1 6.6 12 0z" />
+    </svg>
+  );
+}
 
 export default function SingleFndAlertV3({ data }) {
-  // 1. Safe data extraction 
+  const currentDate = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase();
+
+  // --- 2. DATA EXTRACTION ---
   const raw = data?.raw || data?.selectedItems?.[0]?.raw || {};
   const investorLogos = data?.investorLogos || {};
   
-  const projectName = raw.project_name || raw.name || 'ChainOpera AI';
+  const projectName = raw.project_name || raw.name || 'Project';
   const logoUrl = raw.logo_url || raw.project_logo || null;
+  const totalRaised = raw.funding_amount || raw.funding || '$1.2M';
+  const fundingRound = raw.round || raw.funding_round || 'Seed Round';
   
-  // Funding metrics
-  const totalRaised = raw.funding_amount || raw.funding || '$17.0M';
-  const fundingRound = raw.round || raw.funding_round || 'Series A';
-  const category = (raw.category || raw.sector || 'AI • INFRASTRUCTURE').toUpperCase();
-  
-  // Date formatting
-  const rawDate = raw.announced_on || raw.last_updated || raw.created_at;
-  const announcedDate = rawDate 
-    ? new Date(rawDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-    : 'July 20, 2026';
+  // Clean up description to a one-liner
+  let desc = raw.description || `${projectName} is building the next generation decentralized infrastructure.`;
+  if (desc.length > 120) desc = desc.substring(0, 117) + '...';
 
-  // 2. Investor processing
-  let investorsStr = raw.lead_investor || raw.lead_investors || '';
-  let investorsArray = investorsStr ? investorsStr.split(',').map(s => s.trim()).filter(Boolean) : [];
+  // Investor processing
+  let investorsStr = raw.lead_investor || raw.lead_investors || 'Ribbit Capital, Robot Ventures, MH Ventures, Symbolic Capital, Georgia Ventures';
+  let investorsArray = investorsStr.split(',').map(s => s.trim()).filter(Boolean);
   
-  // Fallback demo investors for preview
-  if (investorsArray.length === 0) {
-    investorsArray = ['finality', 'SAMSUNG NEXT', 'animoca BRANDS', 'ABCDE', 'PIVOT', 'Gate Ventures'];
-  }
-
-  const displayInvestors = investorsArray.slice(0, 6);
-  const hasOthers = investorsArray.length > 6;
+  const leadInvestor = investorsArray.length > 0 ? investorsArray[0] : 'TBA';
+  const otherInvestors = investorsArray.slice(1, 5); // Take up to 4 other investors
 
   return (
-    <div className="relative w-[1200px] h-[675px] bg-[#FDFEFF] font-sans overflow-hidden border border-slate-100 flex flex-col p-12">
+    // --- 3. STRICT PIXEL-PERFECT WRAPPER (1200x675) ---
+    <div className="w-[1200px] h-[675px] flex flex-col justify-between bg-[#1142FE] p-5 font-sans relative overflow-hidden box-border">
       
-      {/* BACKGROUND DECORATIONS */}
-      <div className="absolute -bottom-40 -left-40 w-[600px] h-[600px] bg-blue-400/20 blur-[120px] pointer-events-none rounded-full"></div>
-      <div className="absolute -top-32 -right-32 w-[500px] h-[500px] bg-blue-100/40 blur-[100px] pointer-events-none rounded-full"></div>
+      {/* Top Header */}
+      <header className="flex items-center justify-between px-6 text-white/90 shrink-0 h-[30px] z-20">
+        <span className="text-[11px] font-black tracking-[0.3em] uppercase">AIRDROPSAILOR</span>
+        <span className="text-[11px] font-black tracking-[0.3em] uppercase">FUNDING ALERT</span>
+        <span className="text-[11px] font-black tracking-[0.3em] uppercase">{currentDate}</span>
+      </header>
 
-      {/* 1. TOP HEADER BAR */}
-      <div className="flex items-center justify-between w-full relative z-10 shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-[#1556BE] flex items-center justify-center shadow-md">
-            <img 
-              src="https://pddykfluvauwsfleqsfk.supabase.co/storage/v1/object/public/assets/logo-icon.png" 
-              alt="AirdropSailor" 
-              className="w-6 h-6 object-contain" 
-              crossOrigin="anonymous"
-            />
-          </div>
-          <span className="text-[#1556BE] font-black text-2xl tracking-wide">
-            AIRDROPSAILOR
-          </span>
-        </div>
-
-        <div className="bg-blue-50/80 border border-blue-100 text-[#1556BE] font-bold px-6 py-2.5 rounded-full flex items-center gap-2.5 text-xs tracking-widest shadow-sm relative">
-          <Bell className="w-4 h-4 fill-[#1556BE] text-[#1556BE]" />
-          <span>FUNDING ALERT</span>
-          {/* Decorative Sparkles around the badge */}
-          <div className="absolute -top-2 -right-3 flex gap-1 transform rotate-12">
-            <div className="w-1.5 h-4 bg-blue-400 rounded-full transform rotate-45"></div>
-            <div className="w-1.5 h-3 bg-blue-400 rounded-full mt-1"></div>
-            <div className="w-4 h-1.5 bg-blue-400 rounded-full mt-2 transform -rotate-45"></div>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex-1 flex flex-col justify-center relative z-10 pt-4">
+      {/* Massive White Canvas Card */}
+      <main className="w-full h-[560px] bg-[#F8FAFC] rounded-[2.5rem] shadow-2xl relative flex flex-col pt-8 pb-6 px-10 border-4 border-white/10 overflow-hidden">
         
-        {/* 2. MIDDLE TOP HERO SECTION */}
-        <div className="flex items-center justify-between gap-8 shrink-0">
-          
-          {/* Left: Project Branding */}
-          <div className="flex items-center gap-7 flex-1 min-w-0">
-            <div className="w-[160px] h-[160px] rounded-full bg-[#080E18] flex items-center justify-center p-2 shadow-2xl shrink-0 overflow-hidden border-[8px] border-white z-10">
-              {logoUrl ? (
-                <img 
-                  src={logoUrl} 
-                  alt={projectName} 
-                  className="w-full h-full object-cover rounded-full" 
-                  crossOrigin="anonymous"
-                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                />
-              ) : (
-                <div className="w-full h-full rounded-full bg-gradient-to-tr from-blue-600 to-indigo-800 flex items-center justify-center text-white text-5xl font-black">
-                  {projectName.charAt(0)}
-                </div>
-              )}
-            </div>
+        {/* Soft Background Gradient Blob */}
+        <div className="absolute -top-40 -left-40 w-[500px] h-[500px] bg-blue-100/50 rounded-full blur-3xl opacity-80 z-0 pointer-events-none"></div>
 
-            <div className="flex flex-col gap-3 min-w-0">
-              <h1 className="text-[52px] font-black text-[#0B1B4D] tracking-tight leading-none truncate">
-                {projectName}
-              </h1>
-              <div>
-                <span className="inline-flex items-center px-4 py-1.5 bg-blue-50/80 border border-blue-100 text-[#1556BE] rounded-full font-black text-[11px] tracking-widest uppercase">
-                  {category}
-                </span>
-              </div>
-            </div>
-          </div>
+        {/* Dotted Grid Pattern (Left Side) */}
+        <div 
+          className="absolute left-8 top-[30%] opacity-20 z-0 pointer-events-none" 
+          style={{ 
+            backgroundImage: 'radial-gradient(#64748B 2px, transparent 2px)', 
+            backgroundSize: '16px 16px', 
+            width: '80px', 
+            height: '140px' 
+          }}
+        ></div>
 
-          {/* Right: Total Raised Card */}
-          <div className="w-[440px] bg-gradient-to-br from-blue-50/70 to-indigo-50/30 border border-blue-100/80 rounded-[28px] p-8 flex items-center justify-between shadow-sm shrink-0">
-            <div>
-              <span className="text-slate-400 font-bold text-xs tracking-widest uppercase block mb-1">
-                TOTAL RAISED
-              </span>
-              <span className="text-[64px] font-black text-[#1556BE] leading-none tracking-tighter">
-                {totalRaised}
-              </span>
-            </div>
-            <div className="w-[84px] h-[84px] rounded-full bg-blue-100/60 border border-blue-200/50 flex items-center justify-center shadow-inner shrink-0">
-              <Coins className="w-10 h-10 text-[#1556BE]" strokeWidth={2} />
+        {/* Floating Sparkles */}
+        <Sparkle className="absolute left-[24%] top-[25%] h-5 w-5 text-blue-300/60 z-10" />
+        <Sparkle className="absolute right-[35%] top-[14%] h-7 w-7 text-blue-300/80 z-10" />
+        <Sparkle className="absolute right-[12%] top-[45%] h-4 w-4 text-blue-300/50 z-10" />
+        <Sparkle className="absolute left-[18%] bottom-[40%] h-4 w-4 text-blue-300/50 z-10" />
+
+        {/* Top Left Brand Avatar */}
+        <div className="absolute top-6 left-6 flex items-center justify-center z-20">
+          <div className="w-[72px] h-[72px] rounded-full bg-[#0B1F5E] p-[2px] shadow-lg border-2 border-slate-900 overflow-hidden relative">
+            <img
+              src={logoIconImg}
+              alt="AirdropSailor"
+              crossOrigin="anonymous"
+              className="w-full h-full object-cover rounded-full"
+            />
+            <div className="absolute bottom-0 right-0 w-6 h-6 bg-[#1142FE] rounded-full border-2 border-white flex items-center justify-center shadow-sm">
+              <Anchor size={12} className="text-white" />
             </div>
           </div>
         </div>
 
-        {/* 3. MIDDLE BOTTOM METRIC CARDS */}
-        <div className="grid grid-cols-2 gap-6 mt-8 shrink-0">
-          {/* Round Card */}
-          <div className="bg-[#F8FAFF] border border-slate-100 rounded-3xl p-6 flex items-center gap-5 shadow-sm">
-            <div className="w-14 h-14 rounded-full bg-[#1556BE] text-white flex items-center justify-center shadow-lg shadow-blue-600/20 shrink-0">
-              <TrendingUp className="w-7 h-7" strokeWidth={2.5} />
-            </div>
-            <div>
-              <span className="text-slate-400 font-bold text-[11px] tracking-widest uppercase block mb-0.5">
-                ROUND
-              </span>
-              <span className="text-2xl font-black text-[#0B1B4D] block truncate">
-                {fundingRound}
-              </span>
-            </div>
-          </div>
+        {/* Right Side 3D Asset (Money Bag) */}
+        <img 
+          src={moneyBagImg} 
+          alt="Funding" 
+          crossOrigin="anonymous" 
+          onError={(e) => e.target.style.display = 'none'}
+          className="absolute right-[6%] top-[12%] w-[220px] object-contain drop-shadow-2xl z-10" 
+        />
 
-          {/* Announced On Card */}
-          <div className="bg-[#F8FAFF] border border-slate-100 rounded-3xl p-6 flex items-center gap-5 shadow-sm">
-            <div className="w-14 h-14 rounded-full bg-[#1556BE] text-white flex items-center justify-center shadow-lg shadow-blue-600/20 shrink-0">
-              <Calendar className="w-7 h-7" strokeWidth={2.5} />
-            </div>
-            <div>
-              <span className="text-slate-400 font-bold text-[11px] tracking-widest uppercase block mb-0.5">
-                ANNOUNCED ON
-              </span>
-              <span className="text-2xl font-black text-[#0B1B4D] block truncate">
-                {announcedDate}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* 4. BOTTOM INVESTORS SECTION */}
-        <div className="border border-slate-100 bg-white shadow-[0_4px_20px_rgba(0,0,0,0.03)] rounded-3xl p-6 mt-6 shrink-0">
-          <span className="text-[#1556BE] font-black text-[11px] tracking-widest uppercase block mb-4">
-            INVESTORS
-          </span>
-
-          <div className="flex items-center gap-3 overflow-hidden">
-            {displayInvestors.map((invName, idx) => {
-              const logo = investorLogos[invName];
-              return (
-                <div 
-                  key={idx}
-                  className="bg-white border border-slate-200/60 rounded-xl px-5 py-2 flex items-center justify-center h-[52px] min-w-[140px] max-w-[180px] shadow-sm flex-1"
-                >
-                  {logo ? (
-                     <img src={logo} alt={invName} className="max-h-[28px] max-w-[120px] object-contain opacity-90" crossOrigin="anonymous"/>
-                  ) : (
-                    <span className="text-[#0B1B4D] font-extrabold text-[13px] tracking-tight text-center truncate">
-                      {invName}
-                    </span>
-                  )}
-                </div>
-              );
-            })}
-
-            {hasOthers && (
-              <div className="bg-blue-50 text-[#1556BE] font-bold text-xs px-5 rounded-xl flex items-center justify-center h-[52px] shrink-0">
-                + others
-              </div>
+        {/* Center Hero: Project & Amount */}
+        <div className="flex flex-col items-center z-20 w-full mt-2">
+          {/* Project Logo */}
+          <div className="w-[90px] h-[90px] rounded-full bg-[#111111] p-3 shadow-[0_10px_30px_rgba(0,0,0,0.15)] border-4 border-white flex items-center justify-center overflow-hidden z-10">
+            {logoUrl ? (
+              <img src={logoUrl} alt={projectName} crossOrigin="anonymous" className="w-full h-full object-contain rounded-full" />
+            ) : (
+              <span className="text-white font-black text-3xl">{projectName.charAt(0)}</span>
             )}
           </div>
+          
+          <div className="bg-blue-100 text-[#3B5CF8] px-4 py-1 rounded-full text-[10px] font-black tracking-widest uppercase mt-3 mb-1">
+            PROJECT
+          </div>
+          
+          <h1 className="text-[55px] leading-none font-black tracking-tight text-[#0B1529] uppercase">
+            {projectName}
+          </h1>
+
+          <div className="bg-blue-100 text-[#3B5CF8] px-4 py-1 rounded-full text-[10px] font-black tracking-widest uppercase mt-4 mb-1">
+            RAISED
+          </div>
+
+          <h2 className="text-[120px] leading-none font-black tracking-tighter text-[#3B5CF8] uppercase drop-shadow-sm -mt-2">
+            {totalRaised}
+          </h2>
         </div>
 
-      </div>
+        {/* Bottom Data Section */}
+        <div className="mt-auto w-full flex flex-col gap-4 z-20">
+          
+          {/* Stats Row */}
+          <div className="flex items-end justify-between w-full px-4 gap-6">
+            
+            {/* Round */}
+            <div className="flex flex-col items-center flex-1">
+              <span className="bg-blue-100 text-[#3B5CF8] px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest uppercase mb-2">ROUND</span>
+              <div className="bg-white w-full rounded-2xl p-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex items-center justify-center gap-3">
+                <div className="text-[#3B5CF8]"><Flag size={20} strokeWidth={2.5} /></div>
+                <span className="text-[19px] font-black text-[#3B5CF8]">{fundingRound}</span>
+              </div>
+            </div>
+
+            {/* Lead Investor */}
+            <div className="flex flex-col items-center flex-1">
+              <span className="bg-blue-100 text-[#3B5CF8] px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest uppercase mb-2">LEAD INVESTOR</span>
+              <div className="bg-white w-full rounded-2xl p-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex items-center justify-center gap-3">
+                {investorLogos[leadInvestor] ? (
+                  <img src={investorLogos[leadInvestor]} alt={leadInvestor} className="h-6 w-auto max-w-[80px] object-contain" crossOrigin="anonymous" />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center text-white text-xs font-black">{leadInvestor.charAt(0)}</div>
+                )}
+                <span className="text-[17px] font-black text-[#0B1529] leading-tight max-w-[120px] truncate">{leadInvestor}</span>
+              </div>
+            </div>
+
+            {/* Other Investors */}
+            <div className="flex flex-col items-center flex-[1.5]">
+              <span className="bg-blue-100 text-[#3B5CF8] px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest uppercase mb-2">OTHER INVESTORS</span>
+              <div className="w-full flex items-center justify-center gap-2">
+                {otherInvestors.length > 0 ? otherInvestors.map((inv, idx) => (
+                  <div key={idx} className="bg-white rounded-2xl p-2.5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex items-center gap-2 min-w-[110px] max-w-[130px]">
+                    {investorLogos[inv] ? (
+                      <img src={investorLogos[inv]} alt={inv} className="h-5 w-auto max-w-[40px] object-contain shrink-0" crossOrigin="anonymous" />
+                    ) : (
+                      <div className="w-6 h-6 rounded-full bg-slate-900 flex items-center justify-center text-white text-[9px] font-black shrink-0">{inv.charAt(0)}</div>
+                    )}
+                    <span className="text-[11px] font-black text-[#0B1529] leading-tight truncate">{inv}</span>
+                  </div>
+                )) : (
+                  <div className="bg-white w-full rounded-2xl p-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex items-center justify-center">
+                    <span className="text-[13px] font-black text-slate-400">Undisclosed</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+          </div>
+
+          {/* Description Box */}
+          <div className="bg-slate-50 border border-slate-200/60 rounded-2xl p-4 mx-4 flex items-center gap-4">
+            <div className="w-8 h-8 rounded-full bg-[#3B5CF8] text-white flex items-center justify-center shrink-0 shadow-sm">
+              <Info size={16} strokeWidth={2.5} />
+            </div>
+            <p className="text-[15px] font-medium text-slate-700 truncate">
+              {desc}
+            </p>
+          </div>
+
+        </div>
+      </main>
+
+      {/* Bottom Footer */}
+      <footer className="flex items-center justify-between px-6 text-white/90 shrink-0 h-[30px] z-20">
+        <span className="text-[11px] font-black tracking-[0.3em] uppercase">FUNDING ALERT</span>
+        <span className="flex items-center gap-2 text-[11px] font-black tracking-[0.3em] uppercase">
+          <span className="flex h-5 w-5 items-center justify-center rounded-full border border-white/60">
+            <Anchor size={10} strokeWidth={2.5} />
+          </span>
+          AIRDROPSAILOR.XYZ
+        </span>
+      </footer>
+
     </div>
   );
 }

@@ -40,6 +40,7 @@ import TokenGiveawaysMobile from './mobile/admin/TokenGiveawaysMobile';
 import PendingReviewsMobile from './mobile/admin/PendingReviewsMobile';
 import AdminContentManager from './admin/AdminContentManager';
 import Overview from './admin/Overview';
+import SystemHealthDashboard from './admin/SystemHealthDashboard';
 import Manageas from './admin/Manageas';
 import Earlylist from './admin/Earlylist';
 import AdminExchangeOffers from './admin/ExchangeOffers';
@@ -177,6 +178,7 @@ const AppLayout = () => {
           {/* --- ADMIN ENVIRONMENT (Responsive Layout) --- */}
           <Route path="/admin" element={<ProtectedRoute><ResponsiveAdminLayout isMobile={isMobile} /></ProtectedRoute>}>
             <Route index element={<Overview />} />
+            <Route path="health" element={<SystemHealthDashboard />} />
             <Route path="daily-work" element={<AdminDailyTasks />} />
             <Route path="research-daily" element={<ResearchDailyTasks />} />
             <Route path="studio-daily" element={<StudioDailyTasks />} />
