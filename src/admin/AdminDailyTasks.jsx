@@ -69,11 +69,11 @@ const GROUPS = [
     icon: Users,
     filter: { column: 'pioneer_type', value: 'VC' },
     fields: [
-      { key: 'tier', label: 'Tier', type: 'prompt', placeholder: 'Tier 1 / Tier 2 / Tier 3' },
-      { key: 'score', label: 'Score', type: 'prompt', placeholder: '1–100' },
-      { key: 'website', label: 'Website', type: 'prompt', placeholder: 'https://...' },
+      { key: 'tier', label: 'Tier', type: 'text', placeholder: 'Tier 1 / Tier 2 / Tier 3' },
+      { key: 'score', label: 'Score', type: 'text', placeholder: '1–100' },
+      { key: 'website', label: 'Website', type: 'url', placeholder: 'https://...' },
       { key: 'logo_url', label: 'Logo URL', type: 'logo', placeholder: 'Paste an X URL or handle' },
-      { key: 'handle', label: 'X Handle', type: 'prompt', placeholder: 'handle without @' },
+      { key: 'handle', label: 'X Handle', type: 'text', placeholder: 'handle without @' },
     ],
   },
 ];
@@ -87,7 +87,8 @@ const JSON_FIELD_KEYS = new Set([
 
 const isBlank = (value) => value === null
   || value === undefined
-  || (typeof value === 'string' && value.trim() === '');
+  || (typeof value === 'string' && value.trim() === '')
+  || value === 'N/A'; // Automatically flags 'N/A' as a blank gap
 
 const isEmptyJson = (value) => {
   if (isBlank(value)) return true;
@@ -113,8 +114,9 @@ const isMissing = (row, field) => {
   const value = row[field.key];
   if (isBlank(value)) return true;
 
-  // Treat Clearbit logos as gaps so an X URL can replace them with ImgBB.
-  if (field.type === 'logo' && typeof value === 'string' && value.includes('clearbit.com')) {
+  // STRICT IMGBB ENFORCER: 
+  // If the field is a logo and the URL doesn't contain 'ibb.co', flag it as a missing gap.
+  if (field.type === 'logo' && typeof value === 'string' && !value.includes('ibb.co')) {
     return true;
   }
 
@@ -801,12 +803,14 @@ export default function AdminDailyTasks() {
         <div className="grid gap-4 xl:grid-cols-2">
           {visibleRecords.map((row) => {
             const missingFields = getMissingFields(activeGroup, row);
-            const promptFields = missingFields.filter((field) => (
-              field.type === 'json' || field.type === 'prompt'
-            ));
-            const inlineFields = missingFields.filter((field) => (
-              field.type !== 'json' && field.type !== 'prompt'
-            ));
+            
+            // Standard inputs (like Text, URL, Logo) show up inline
+            const inlineFields = missingFields.filter((field) => field.type !== 'json');
+            
+            // AI Prompts show up for JSON fields, AND for any missing Pioneer text fields
+            const promptFields = activeGroup.key === 'pioneers'
+              ? missingFields.filter((field) => field.key !== 'logo_url')
+              : missingFields.filter((field) => field.type === 'json');
             const points = getPointsEarnable(pointRules, activeGroup, missingFields);
             const logo = row.logo_url || row.project_logo;
 
