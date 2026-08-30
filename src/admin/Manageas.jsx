@@ -662,6 +662,18 @@ Ensure there are a maximum of 5 competitor objects inside the "competitors" arra
           result = await supabase.from('tasks').insert([taskData]);
         }
 
+        // 4. Auto-update parent Project status
+        if (!result.error && formData.task_category && formData.project_id) {
+          const { error: projectUpdateError } = await supabase
+            .from('projects')
+            .update({ status: formData.task_category })
+            .eq('id', formData.project_id);
+            
+          if (projectUpdateError) {
+            console.error("Failed to auto-update project status:", projectUpdateError);
+          }
+        }
+
       } else {
         // === 1. SYNC VCs TO PIONEER PROFILES ===
         if (formData.lead_investor) {
@@ -962,7 +974,13 @@ Ensure there are a maximum of 5 competitor objects inside the "competitors" arra
                       <div>
                         <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1">Phase</label>
                         <select value={formData.status || ''} onChange={(e) => handleInputChange('status', e.target.value)} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 text-sm font-medium text-slate-700">
-                          <option value="Waitlist">Waitlist</option><option value="Testnet">Testnet</option><option value="Mainnet">Mainnet</option><option value="Point Farming">Point Farming</option><option value="TGE">TGE</option>
+                          <option value="Waitlist">Waitlist</option>
+                          <option value="Testnet Waitlist">Testnet Waitlist</option>
+                          <option value="Incentivized Testnet">Incentivized Testnet</option>
+                          <option value="Point Farming">Point Farming</option>
+                          <option value="Snapshot">Snapshot</option>
+                          <option value="TGE & Claim">TGE & Claim</option>
+                          <option value="Post-TGE / Season 2">Post-TGE / Season 2</option>
                         </select>
                       </div>
                       <div className="md:col-span-2">
@@ -1275,10 +1293,12 @@ Ensure there are a maximum of 5 competitor objects inside the "competitors" arra
                           >
                             <option value="">Select a category (Optional)...</option>
                             <option value="Waitlist">Waitlist</option>
-                            <option value="Testnet Live">Testnet Live</option>
-                            <option value="Mainnet Launched">Mainnet Launched</option>
-                            <option value="Social Quest">Social Quest</option>
-                            <option value="Airdrop Live">Airdrop Live</option>
+                            <option value="Testnet Waitlist">Testnet Waitlist</option>
+                            <option value="Incentivized Testnet">Incentivized Testnet</option>
+                            <option value="Point Farming">Point Farming</option>
+                            <option value="Snapshot">Snapshot</option>
+                            <option value="TGE & Claim">TGE & Claim</option>
+                            <option value="Post-TGE / Season 2">Post-TGE / Season 2</option>
                           </select>
                           <p className="text-[9px] text-slate-400 mt-1 font-medium">
                             * Selecting this auto-updates the parent Project's status.
