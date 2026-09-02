@@ -19,20 +19,38 @@ export default function TrackerDailyMobile() {
   const [selectedTask, setSelectedTask] = useState(null);
 
   // --- DATA GROUPING LOGIC (Restored from Desktop) ---
+  const isOneTime = (task) => {
+    const r = (task.recurrence || task.custom_interval || '').toLowerCase();
+    return r === 'once' || r === 'one-time';
+  };
+
   const dailyTasks = useMemo(() => {
-    return tasks.filter(task => task.status === 'pending' || completedToday(task))
-                .sort((a, b) => new Date(a.nextDue || '9999-12-31') - new Date(b.nextDue || '9999-12-31'));
+    return tasks.filter(task => {
+      if (task.status === 'pending') return true;
+      // Only keep completed tasks in today's view if they are recurring
+      return completedToday(task) && !isOneTime(task);
+    }).sort((a, b) => new Date(a.nextDue || '9999-12-31') - new Date(b.nextDue || '9999-12-31'));
   }, [tasks]);
 
   const groups = useMemo(() => {
     const todayEnd = startOfDay(new Date(Date.now() + DAY)).getTime();
     const cutoff = Date.now() + 3 * 3600000; // 3 hours
-    const activeTasks = dailyTasks.filter(task => task.status !== 'completed');
+
+    // Never process permanently dead one-time tasks
+    const activeTasks = dailyTasks.filter(task => {
+      if (isComplete(task) && isOneTime(task)) return false;
+      return task.status !== 'completed';
+    });
 
     return {
       now: activeTasks.filter(task => !completedToday(task) && task.nextDue && new Date(task.nextDue).getTime() <= cutoff),
       today: activeTasks.filter(task => !completedToday(task) && task.nextDue && new Date(task.nextDue).getTime() > cutoff && new Date(task.nextDue).getTime() < todayEnd),
-      upcoming: activeTasks.filter(task => completedToday(task) || !task.nextDue || new Date(task.nextDue).getTime() >= todayEnd),
+      upcoming: activeTasks.filter(task => {
+        // Completed recurring tasks show in upcoming (for tomorrow/future)
+        if (completedToday(task) && !isOneTime(task)) return true;
+        // Pending tasks due tomorrow or later
+        return task.nextDue && new Date(task.nextDue).getTime() >= todayEnd;
+      }),
     };
   }, [dailyTasks]);
 
