@@ -62,13 +62,37 @@ export default function TrackerAirdropsMobile() {
 
   const track = async (project) => { 
     if (!user || processing) return; 
+    
     setProcessing(true); 
     try { 
+      // 1. Fetch current limit and expiry from the database
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('subscription_tier, subscription_expires_at, project_limit')
+        .eq('auth_id', user.id)
+        .single();
+
+      let currentLimit = 5;
+      const now = new Date();
+      const expiresAt = profile?.subscription_expires_at ? new Date(profile.subscription_expires_at) : null;
+
+      if ((profile?.subscription_tier === 'Voyager Pass' || profile?.subscription_tier === 'Sailor Pass') && (!expiresAt || expiresAt > now)) {
+          currentLimit = profile?.project_limit || 999;
+      }
+
+      // 2. Enforce the limit
+      if (trackedIds.length >= currentLimit) {
+        alert(`Tracking limit reached! You can only track ${currentLimit} projects on your current tier. Upgrade to Voyager Pass.`);
+        setProcessing(false);
+        return;
+      }
+
+      // 3. Track the project
       const { error } = await supabase.rpc('track_project_and_sync', { p_auth_id: user.id, p_project_id: project.id, p_local_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone }); 
       if (error) throw error; 
       await fetchProjects(); 
     } catch (error) { 
-      console.error('Unable to track project:', error); 
+      alert(error.message || 'Unable to track project');
     } finally { 
       setProcessing(false); 
     } 
@@ -199,8 +223,10 @@ function ProjectSection({ empty, projects, taskStats, loading, actionLabel, onAc
   ); 
 }
 
-function ProjectCard({ project, stats = { total: 0, completed: 0 }, actionLabel, onAction, processing }) { 
-  const progress = stats.total ? Math.round((stats.completed / stats.total) * 100) : 0; 
+function ProjectCard({ project, stats, actionLabel, onAction, processing }) { 
+  // Fallback to the master project table's task_count for untracked projects
+  const currentStats = stats || { total: project.task_count || 0, completed: 0 };
+  const progress = currentStats.total ? Math.round((currentStats.completed / currentStats.total) * 100) : 0; 
   
   return (
     <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
@@ -226,7 +252,7 @@ function ProjectCard({ project, stats = { total: 0, completed: 0 }, actionLabel,
       {/* Stats row */}
       <div className="mt-5 flex items-center justify-between text-xs font-bold text-slate-500">
         <span className="bg-slate-50 px-2 py-1 rounded-md text-slate-600">{project.funding || 'Funding TBA'}</span>
-        <span>{stats.completed} / {stats.total} tasks</span>
+        <span>{currentStats.completed} / {currentStats.total} tasks</span>
       </div>
       
       {/* Progress Bar */}
