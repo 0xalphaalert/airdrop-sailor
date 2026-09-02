@@ -229,7 +229,7 @@ export default function SubscriptionPage() {
               </div>
               <div className="flex gap-7 mb-5">
                 <div className="flex-shrink-0 pt-0.5">
-                  <div className="text-4xl font-black text-slate-900 leading-none">$1</div>
+                  <div className="text-4xl font-black text-slate-900 leading-none">$2</div>
                   <div className="text-xs text-slate-400 mt-1">per month</div>
                 </div>
                 <ul className="space-y-2 flex-1">
@@ -293,7 +293,7 @@ export default function SubscriptionPage() {
               </div>
               <div className="flex gap-7 mb-5">
                 <div className="flex-shrink-0 pt-0.5">
-                  <div className="text-4xl font-black text-slate-900 leading-none">$3</div>
+                  <div className="text-4xl font-black text-slate-900 leading-none">$5</div>
                   <div className="text-xs text-slate-400 mt-1">3 months</div>
                 </div>
                 <ul className="space-y-2 flex-1">
