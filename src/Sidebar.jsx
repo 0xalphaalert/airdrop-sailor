@@ -31,9 +31,9 @@ const mainNavItems = [
 // Group 2: Reward & Subscription
 const rewardNavItems = [
   { to: '/subscription', label: 'Sailor Pass', icon: Crown },
-  { to: '/xp-levels', label: 'Earn Sail', icon: Trophy }, // Updated label here
+  { to: '/xp-levels', label: 'Earn Sail', icon: Trophy },
   { to: '/marketplace', label: 'Marketplace', icon: Gift },
-  { to: '/profile/roles', label: 'Roles', icon: Award },
+  // ❌ Removed Roles item completely
 ];
 
 // Group 3: Tools
