@@ -201,14 +201,7 @@ const AppLayout = () => {
   }
 />
 
-<Route
-  path="/profile/roles"
-  element={
-    <ProtectedRoute>
-      <ProfileRoles />
-    </ProtectedRoute>
-  }
-/>
+
 
 <Route
   path="/profile/sybil"
