@@ -334,7 +334,7 @@ export default function XPLevelsPage() {
         <div className="flex items-start justify-between mb-6">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-3xl font-black tracking-tight text-slate-900">SAIL &amp; Levels</h1>
+              <h1 className="text-3xl font-black tracking-tight text-slate-900">Earn Sail</h1>
               <Info className="w-5 h-5 text-slate-400" />
             </div>
             <p className="text-slate-500 mt-1 text-sm">Track your progress, earn SAIL and level up to unlock exclusive rewards.</p>
