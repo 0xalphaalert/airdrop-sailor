@@ -38,8 +38,8 @@ export default function XPLevelsPageMobile({
         <div className="flex items-start justify-between mb-5">
           <div className="pr-2">
             <h1 className="text-2xl font-black tracking-tight text-slate-900 flex items-center gap-2">
-              SAIL & Levels <Info className="w-4 h-4 text-slate-400" />
-            </h1>
+  Earn Sail <Info className="w-4 h-4 text-slate-400" />
+</h1>
             <p className="text-[11px] font-medium text-slate-500 mt-1 leading-snug">
               Track your progress, earn SAIL and level up to unlock exclusive rewards.
             </p>
