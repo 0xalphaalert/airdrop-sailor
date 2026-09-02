@@ -105,11 +105,11 @@ export default function BottomNavigation() {
         <div className="grid grid-cols-2 gap-2">
           
           <Link to="/xp-levels" className="flex flex-col items-center justify-center gap-2 p-4 bg-slate-50 hover:bg-blue-50 rounded-2xl transition-colors active:scale-95 text-slate-700 hover:text-blue-600">
-            <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
-              <Zap size={20} className="fill-blue-100" />
-            </div>
-            <span className="text-[11px] font-black tracking-tight">SAIL & Levels</span>
-          </Link>
+  <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
+    <Zap size={20} className="fill-blue-100" />
+  </div>
+  <span className="text-[11px] font-black tracking-tight">Earn Sail</span> {/* Updated label here */}
+</Link>
 
           <Link to="/subscription" className="flex flex-col items-center justify-center gap-2 p-4 bg-slate-50 hover:bg-amber-50 rounded-2xl transition-colors active:scale-95 text-slate-700 hover:text-amber-600">
             <div className="w-10 h-10 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center">
