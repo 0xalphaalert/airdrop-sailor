@@ -103,37 +103,31 @@ export default function BottomNavigation() {
         }`}
       >
         <div className="grid grid-cols-2 gap-2">
-          
-          <Link to="/xp-levels" className="flex flex-col items-center justify-center gap-2 p-4 bg-slate-50 hover:bg-blue-50 rounded-2xl transition-colors active:scale-95 text-slate-700 hover:text-blue-600">
-  <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
-    <Zap size={20} className="fill-blue-100" />
-  </div>
-  <span className="text-[11px] font-black tracking-tight">Earn Sail</span> {/* Updated label here */}
-</Link>
+  
+  <Link to="/xp-levels" className="flex flex-col items-center justify-center gap-2 p-4 bg-slate-50 hover:bg-blue-50 rounded-2xl transition-colors active:scale-95 text-slate-700 hover:text-blue-600">
+    <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
+      <Zap size={20} className="fill-blue-100" />
+    </div>
+    <span className="text-[11px] font-black tracking-tight">Earn Sail</span>
+  </Link>
 
-          <Link to="/subscription" className="flex flex-col items-center justify-center gap-2 p-4 bg-slate-50 hover:bg-amber-50 rounded-2xl transition-colors active:scale-95 text-slate-700 hover:text-amber-600">
-            <div className="w-10 h-10 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center">
-              <Crown size={20} className="fill-amber-100" />
-            </div>
-            <span className="text-[11px] font-black tracking-tight">Subscription</span>
-          </Link>
+  <Link to="/subscription" className="flex flex-col items-center justify-center gap-2 p-4 bg-slate-50 hover:bg-amber-50 rounded-2xl transition-colors active:scale-95 text-slate-700 hover:text-amber-600">
+    <div className="w-10 h-10 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center">
+      <Crown size={20} className="fill-amber-100" />
+    </div>
+    <span className="text-[11px] font-black tracking-tight">Subscription</span>
+  </Link>
 
-          <Link to="/profile/roles" className="flex flex-col items-center justify-center gap-2 p-4 bg-slate-50 hover:bg-emerald-50 rounded-2xl transition-colors active:scale-95 text-slate-700 hover:text-emerald-600">
-            <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center">
-              <Shield size={20} className="fill-emerald-100" />
-            </div>
-            <span className="text-[11px] font-black tracking-tight">Roles</span>
-          </Link>
+  {/* ❌ Roles Link removed completely from here */}
 
-          <Link to="/marketplace" className="flex flex-col items-center justify-center gap-2 p-4 bg-slate-50 hover:bg-indigo-50 rounded-2xl transition-colors active:scale-95 text-slate-700 hover:text-indigo-600">
-            <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center">
-              <Store size={20} className="fill-indigo-100" />
-            </div>
-            <span className="text-[11px] font-black tracking-tight">Marketplace</span>
-          </Link>
+  <Link to="/marketplace" className="flex flex-col items-center justify-center gap-2 p-4 bg-slate-50 hover:bg-indigo-50 rounded-2xl transition-colors active:scale-95 text-slate-700 hover:text-indigo-600">
+    <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center">
+      <Store size={20} className="fill-indigo-100" />
+    </div>
+    <span className="text-[11px] font-black tracking-tight">Marketplace</span>
+  </Link>
 
-        </div>
-
+</div>
         {/* 🚀 CONDITIONAL INSTALL PWA BUTTON */}
         {isInstallable && (
           <button 
