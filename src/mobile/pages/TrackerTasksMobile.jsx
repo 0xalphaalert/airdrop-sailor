@@ -29,15 +29,9 @@ export default function TrackerTasksMobile() {
 
   return (
     <TrackerLayoutMobile>
-      <div className="relative px-4 pt-0 pb-0">
+      <div className="space-y-5 px-4 pt-4 pb-0">
         
-        {/* 
-          FIXED: 
-          1. Changed `top-16` to `top-14` (56px) to dock perfectly under the global header.
-          2. Changed background to solid `bg-slate-50` so scrolling cards cannot bleed through transparency.
-          3. Added shadow pointing upwards to perfectly seal any sub-pixel gaps.
-        */}
-        <div className="sticky top-14 z-30 -mx-4 mb-4 border-b border-slate-200 bg-slate-50 px-4 pb-4 pt-2 shadow-[0_-10px_0_0_#f8fafc]">
+        <div>
           <h1 className="mb-3 text-2xl font-bold text-slate-900">Task Library</h1>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
