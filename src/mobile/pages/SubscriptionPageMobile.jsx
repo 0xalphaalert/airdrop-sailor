@@ -142,7 +142,7 @@ export default function SubscriptionPageMobile({
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-2xl font-black text-slate-900 leading-none">$1</div>
+                  <div className="text-2xl font-black text-slate-900 leading-none">$2</div>
                   <div className="text-[9px] text-slate-400 mt-1">/ month</div>
                 </div>
               </div>
@@ -196,7 +196,7 @@ export default function SubscriptionPageMobile({
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-2xl font-black text-slate-900 leading-none">$3</div>
+                  <div className="text-2xl font-black text-slate-900 leading-none">$5</div>
                   <div className="text-[9px] text-slate-400 mt-1">/ 3 months</div>
                 </div>
               </div>
