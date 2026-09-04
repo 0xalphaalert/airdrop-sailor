@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   Home, Activity, Plus, LineChart, User, 
-  Zap, Crown, Shield, Store, X, Download 
+  Zap, Crown, Shield, Store, X, Download, Users
 } from 'lucide-react';
 
 export default function BottomNavigation() {
@@ -110,6 +110,12 @@ export default function BottomNavigation() {
     </div>
     <span className="text-[11px] font-black tracking-tight">Earn Sail</span>
   </Link>
+          <Link to="/refer" className="flex flex-col items-center justify-center gap-2 p-4 bg-slate-50 hover:bg-emerald-50 rounded-2xl transition-colors active:scale-95 text-slate-700 hover:text-emerald-600">
+            <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center">
+              <Users size={20} />
+            </div>
+            <span className="text-[11px] font-black tracking-tight">Refer & Earn</span>
+          </Link>
 
   <Link to="/subscription" className="flex flex-col items-center justify-center gap-2 p-4 bg-slate-50 hover:bg-amber-50 rounded-2xl transition-colors active:scale-95 text-slate-700 hover:text-amber-600">
     <div className="w-10 h-10 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center">
