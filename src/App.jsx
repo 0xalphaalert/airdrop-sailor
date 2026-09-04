@@ -156,7 +156,8 @@ const AppLayout = () => {
   // 🚨 THE WIZARD INTERCEPTOR
   if (authenticated && needsOnboarding) {
     return (
-      <div className="h-screen font-sans flex overflow-hidden bg-white text-slate-900">
+      // Added w-full and removed the conflicting flex row to perfectly center the form
+      <div className="h-screen w-full font-sans bg-white text-slate-900">
         <OnboardingWizard />
       </div>
     );
