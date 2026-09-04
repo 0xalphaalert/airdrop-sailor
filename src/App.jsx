@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Navigate, Outlet, Route, Routes, useLocation, useParams } from 'react-router-dom';
 import { AuthProvider, useAuth } from './useAuth';
 import AuthModal from "./components/AuthModal";
 import ReloadPrompt from './components/ReloadPrompt';
@@ -70,6 +70,19 @@ import XPLevelsPage from './pages/XPLevelsPage';
 import MarketplacePage from './pages/MarketplacePage';
 import AutoWorker from './pages/AutoWorker';
 import ProjectResearchHub from './pages/admin/ProjectResearchHub';
+
+// 🎯 CAPTURES REFERRAL CODE INTO LOCAL STORAGE AND REDIRECTS HOME
+const ReferralHandler = () => {
+  const { code } = useParams();
+
+  useEffect(() => {
+    if (code) {
+      localStorage.setItem('referral_code', code);
+    }
+  }, [code]);
+
+  return <Navigate to="/" replace />;
+};
 
 // 🚀 OLD BEHAVIOR RESTORED: Dynamic Index Route
 const IndexRoute = () => {
@@ -147,6 +160,9 @@ const AppLayout = () => {
         {showTopHeader && <TopHeader />}
 
         <Routes>
+          {/* --- 🎯 REFERRAL CAPTURE ROUTE --- */}
+          <Route path="/ref/:code" element={<ReferralHandler />} />
+
           {/* --- PUBLIC ROUTES --- */}
           <Route path="/" element={<IndexRoute />} />
           <Route path="/sprints" element={<ShortTasksFeed />} />
@@ -164,7 +180,7 @@ const AppLayout = () => {
           {/* --- 🤖 HIDDEN AUTOMATION ROUTE (Ghost Worker) --- */}
           <Route path="/auto-worker" element={<AutoWorker />} />
 
-          {/* --- 🚀 NEW ALPHABRAIN STUDIO ENVIRONMENT --- */}
+          {/* --- 🚀 ALPHABRAIN STUDIO ENVIRONMENT --- */}
           <Route path="/studio" element={<ProtectedRoute><AlphaBrainLayout /></ProtectedRoute>}>
             <Route index element={<Dashboard />} />
             <Route path="create" element={<CreatorStudio />} />
@@ -193,37 +209,34 @@ const AppLayout = () => {
 
           {/* --- PROTECTED USER DASHBOARD --- */}
           <Route
-  path="/profile"
-  element={
-    <ProtectedRoute>
-      <ProfileSettings />
-    </ProtectedRoute>
-  }
-/>
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <ProfileSettings />
+              </ProtectedRoute>
+            }
+          />
 
+          <Route
+            path="/profile/sybil"
+            element={
+              <ProtectedRoute>
+                <ProfileOnchain />
+              </ProtectedRoute>
+            }
+          />
 
-
-<Route
-  path="/profile/sybil"
-  element={
-    <ProtectedRoute>
-      <ProfileOnchain />
-    </ProtectedRoute>
-  }
-/>
-
-
-          {/* --- 🚀 NEW STANDALONE TRACKER APP --- */}
+          {/* --- 🚀 STANDALONE TRACKER APP --- */}
           <Route path="/tracker" element={<ProtectedRoute><ResponsiveTrackerLayout isMobile={isMobile} /></ProtectedRoute>}>
             <Route index element={<Navigate to="overview" replace />} />
-            
-            {/* All the Tracker Sub-pages */}
             <Route path="overview" element={isMobile ? <TrackerDashboardMobile /> : <TrackerOverview />} />
             <Route path="airdrops" element={isMobile ? <TrackerAirdropsMobile /> : <TrackerAirdrops />} />
             <Route path="tasks" element={isMobile ? <TrackerTasksMobile /> : <TrackerTasks />} />
             <Route path="daily" element={isMobile ? <TrackerDailyMobile /> : <TrackerDaily />} />
-            
           </Route>
+
+          {/* --- 🛑 CATCH-ALL (PREVENTS BLANK PAGES ON UNKNOWN PATHS) --- */}
+          <Route path="*" element={<Navigate to="/" replace />} />
 
         </Routes>
       </main>
