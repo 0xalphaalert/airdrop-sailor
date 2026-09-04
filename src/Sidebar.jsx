@@ -18,7 +18,8 @@ Award,
   Menu,
   X,
   Sparkles,
-  Star
+  Star,
+  Users
 } from 'lucide-react';
 
 // Group 1: Main (No section header)
@@ -32,6 +33,7 @@ const mainNavItems = [
 const rewardNavItems = [
   { to: '/subscription', label: 'Sailor Pass', icon: Crown },
   { to: '/xp-levels', label: 'Earn Sail', icon: Trophy },
+  { to: '/refer', label: 'Refer & Earn', icon: Users },
   { to: '/marketplace', label: 'Marketplace', icon: Gift },
   // ❌ Removed Roles item completely
 ];
