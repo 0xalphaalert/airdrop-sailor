@@ -83,14 +83,14 @@ export default function ReferEarnPage() {
   }, [user]);
 
   return (
-    <div className="min-h-screen bg-white pb-32 lg:pb-12 pt-16 lg:pt-0">
+    <div className="min-h-screen bg-white pb-32 lg:pb-12 pt-[72px] lg:pt-0">
       
       {/* 🚀 RENDER MOBILE HEADER ON SMALL SCREENS */}
       <div className="block lg:hidden">
         <MobileHeader />
       </div>
 
-      <main className="mx-auto max-w-6xl space-y-6 px-4 py-8 sm:px-8">
+      <main className="mx-auto max-w-6xl space-y-6 px-4 py-4 sm:px-8 sm:py-8">
         
         {/* Hero Section */}
         <section className="grid items-center gap-8 grid-cols-1 lg:grid-cols-2">
