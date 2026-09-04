@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { supabase } from "@/supabaseClient"; // Adjust path if needed
-import { useAuth } from "@/useAuth"; // Adjust path if needed
+import { supabase } from "../supabaseClient";
+import { useAuth } from "../useAuth";
 import {
   Link2, Copy, Twitter, Send, MessageCircle, MoreHorizontal, Infinity as InfinityIcon,
   Users, ShieldCheck, Zap, Share2, UserPlus, Coins, Gift, ArrowRight, ChevronRight,
