@@ -6,8 +6,8 @@ import {
   Users, ShieldCheck, Zap, Share2, UserPlus, Coins, Gift, ArrowRight, ChevronRight,
   Plus, Sailboat, Trophy, TrendingUp, Percent, User, HelpCircle, Sparkles, Check
 } from "lucide-react";
-import sailCoin from "@/assets/sail-coin.png";
-import sailGift from "@/assets/sail-gift.png";
+import sailCoin from "../assets/sail-coin.png";
+import sailGift from "../assets/sail-gift.png";
 
 const benefits = [
   { icon: InfinityIcon, title: "Lifetime", sub: "Rewards", bg: "bg-blue-100", fg: "text-blue-600" },
