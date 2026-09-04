@@ -1,7 +1,6 @@
 // src/mobile/components/layout/MobilePageWrapper.jsx
 import React from 'react';
 import MobileHeader from '../navigation/MobileHeader';
-import MobileFooterSwitcher from '../navigation/MobileFooterSwitcher';
 
 export default function MobilePageWrapper({ children, hidePadding = false }) {
   return (
@@ -15,9 +14,6 @@ export default function MobilePageWrapper({ children, hidePadding = false }) {
       <main className={`flex-1 w-full ${hidePadding ? 'pt-[68px] pb-32' : 'px-4 pt-[84px] pb-32'}`}>
         {children}
       </main>
-
-      {/* 3. The Global Footer */}
-      <MobileFooterSwitcher />
       
     </div>
   );
