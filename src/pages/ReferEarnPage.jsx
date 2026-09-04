@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
 import { useAuth } from "../useAuth";
-import MobileHeader from "../mobile/components/navigation/MobileHeader"; // 🚀 Import mobile header
 import {
   Link2, Copy, Infinity as InfinityIcon,
   Users, ShieldCheck, Zap, Share2, UserPlus, Coins, Gift, ArrowRight,
@@ -83,13 +82,7 @@ export default function ReferEarnPage() {
   }, [user]);
 
   return (
-    <div className="min-h-screen bg-white pb-32 lg:pb-12 pt-[72px] lg:pt-0">
-      
-      {/* 🚀 RENDER MOBILE HEADER ON SMALL SCREENS */}
-      <div className="block lg:hidden">
-        <MobileHeader />
-      </div>
-
+    <div className="min-h-screen bg-white pb-32 lg:pb-12 pt-4 lg:pt-0">
       <main className="mx-auto max-w-6xl space-y-6 px-4 py-4 sm:px-8 sm:py-8">
         
         {/* Hero Section */}
@@ -98,19 +91,19 @@ export default function ReferEarnPage() {
             <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-xs font-bold tracking-wide text-blue-600">
               <Sparkles className="h-3.5 w-3.5" /> REFER &amp; EARN
             </span>
-            <h1 className="mt-4 text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight tracking-tight text-slate-900">
+            <h1 className="mt-3 text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight tracking-tight text-slate-900">
               Refer Your Friends
               <br />
               and Earn <span className="text-blue-600">10% SAIL</span>
               <br />
               for Lifetime
             </h1>
-            <p className="mt-4 max-w-md text-slate-500 text-sm sm:text-base">
+            <p className="mt-3 max-w-md text-slate-500 text-sm sm:text-base">
               Invite your friends to AirdropSailor and earn 10% of the SAIL
               tokens they earn, for lifetime. The more they earn, the more you earn!
             </p>
 
-            <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
               {benefits.map((b) => (
                 <div key={b.title} className="flex items-start gap-2.5">
                   <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${b.bg} ${b.fg}`}>
