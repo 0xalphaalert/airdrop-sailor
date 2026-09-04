@@ -70,6 +70,7 @@ import OnboardingTour from './components/OnboardingTour';
 import XPLevelsPage from './pages/XPLevelsPage';
 import MarketplacePage from './pages/MarketplacePage';
 import AutoWorker from './pages/AutoWorker';
+import ReferEarnPage from './pages/ReferEarnPage';
 import ProjectResearchHub from './pages/admin/ProjectResearchHub';
 
 // 🎯 CAPTURES REFERRAL CODE INTO LOCAL STORAGE AND REDIRECTS HOME
@@ -178,6 +179,7 @@ const AppLayout = () => {
           <Route path="/sprints" element={<ShortTasksFeed />} />
           <Route path="/:id/airdropguide" element={<ProjectDetail />} />
           <Route path="/fundraising" element={<FundraisingPage />} />
+          <Route path="/refer" element={<ReferEarnPage />} />
           <Route path="/early-tasks" element={<EarlyTasks />} />
           <Route path="/early-airdrops" element={<EarlyAirdropsPage />} />
           <Route path="/subscription" element={<SubscriptionPage />} />
