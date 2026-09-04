@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
 import { useAuth } from "../useAuth";
+import MobileHeader from "../mobile/components/navigation/MobileHeader"; // 🚀 Bring header back
 import {
   Link2, Copy, Infinity as InfinityIcon,
   Users, ShieldCheck, Zap, Share2, UserPlus, Coins, Gift, ArrowRight,
@@ -82,7 +83,14 @@ export default function ReferEarnPage() {
   }, [user]);
 
   return (
-    <div className="min-h-screen bg-white pb-32 lg:pb-12 pt-4 lg:pt-0">
+    // 🚀 Added exact pt-[76px] to clear the fixed mobile header with zero excessive gaps
+    <div className="min-h-screen bg-white pb-32 lg:pb-12 pt-[76px] lg:pt-0">
+      
+      {/* RENDER MOBILE HEADER ON SMALL SCREENS */}
+      <div className="block lg:hidden">
+        <MobileHeader />
+      </div>
+
       <main className="mx-auto max-w-6xl space-y-6 px-4 py-4 sm:px-8 sm:py-8">
         
         {/* Hero Section */}
