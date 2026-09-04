@@ -66,7 +66,6 @@ import Settings from './studio/Settings';
 import ProfileOnchain from './profile/ProfileOnchain';
 import ProfileSettings from './profile/ProfileSettings';
 import ProfileRoles from './profile/ProfileRoles';
-import OnboardingTour from './components/OnboardingTour';
 import XPLevelsPage from './pages/XPLevelsPage';
 import MarketplacePage from './pages/MarketplacePage';
 import AutoWorker from './pages/AutoWorker';
@@ -256,7 +255,7 @@ const AppLayout = () => {
       {/* Hide the public BottomNavigation when inside Admin or Studio panels */}
       {isMobile && authenticated && !location.pathname.startsWith('/admin') && !location.pathname.startsWith('/studio') && <BottomNavigation />}
       
-      {authenticated && <OnboardingTour />}
+      
       
       <ReloadPrompt />
     </div>
