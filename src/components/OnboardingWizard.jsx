@@ -89,7 +89,7 @@ export default function OnboardingWizard() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 relative">
+    <div className="w-full min-h-screen bg-white flex flex-col items-center justify-center p-6 relative">
       
       {/* Progress Indicator */}
       <div className="absolute top-8 w-full max-w-md px-4 flex justify-between items-center text-sm font-bold text-slate-300">
