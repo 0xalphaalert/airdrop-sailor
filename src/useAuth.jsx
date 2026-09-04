@@ -8,6 +8,7 @@ export function AuthProvider({ children }) {
   const [ready, setReady] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // 1. Manage Authentication State
   useEffect(() => {
     // Check session on load
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -23,6 +24,36 @@ export function AuthProvider({ children }) {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // --- 2. 🎯 NEW: AUTO-APPLY REFERRAL CODE ---
+  useEffect(() => {
+    const processReferral = async () => {
+      // Only run if the user is successfully logged in
+      if (user) {
+        const storedReferralCode = localStorage.getItem('referral_code');
+        
+        if (storedReferralCode) {
+          try {
+            const { data, error } = await supabase.rpc('apply_referral_code', {
+              p_auth_id: user.id,
+              p_code: storedReferralCode
+            });
+            
+            if (error) throw error;
+            console.log("Referral applied:", data?.message);
+            
+            // Wipe the code from storage so it doesn't try to run again
+            localStorage.removeItem('referral_code');
+          } catch (err) {
+            console.error("Failed to apply referral code:", err);
+          }
+        }
+      }
+    };
+    
+    processReferral();
+  }, [user]); // This hook fires whenever the 'user' state changes
+  // ------------------------------------------
 
   // Controls the popup!
   const login = () => setIsModalOpen(true);
