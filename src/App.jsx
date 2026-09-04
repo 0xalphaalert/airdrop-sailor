@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Navigate, Outlet, Route, Routes, useLocation, useParams } from 'react-router-dom';
+import OnboardingWizard from './components/OnboardingWizard';
 import { AuthProvider, useAuth } from './useAuth';
 import AuthModal from "./components/AuthModal";
 import ReloadPrompt from './components/ReloadPrompt';
