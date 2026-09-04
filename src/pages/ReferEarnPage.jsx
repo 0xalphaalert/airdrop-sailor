@@ -84,14 +84,14 @@ export default function ReferEarnPage() {
 
   return (
     // 🚀 Added exact pt-[76px] to clear the fixed mobile header with zero excessive gaps
-    <div className="min-h-screen bg-white pb-32 lg:pb-12 pt-[76px] lg:pt-0">
+    <div className="min-h-screen bg-white pb-32 lg:pb-12">
       
       {/* RENDER MOBILE HEADER ON SMALL SCREENS */}
       <div className="block lg:hidden">
         <MobileHeader />
       </div>
 
-      <main className="mx-auto max-w-6xl space-y-6 px-4 py-4 sm:px-8 sm:py-8">
+      <main className="mx-auto max-w-6xl space-y-6 px-4 pt-4 pb-8 sm:px-8 sm:py-8">
         
         {/* Hero Section */}
         <section className="grid items-center gap-8 grid-cols-1 lg:grid-cols-2">
