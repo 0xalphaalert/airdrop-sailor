@@ -125,7 +125,7 @@ const ResponsiveAdminLayout = ({ isMobile }) => (isMobile ? <AdminLayoutMobile /
 
 const AppLayout = () => {
   const location = useLocation();
-  const { authenticated } = useAuth();
+  const { authenticated, needsOnboarding } = useAuth();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
 
   useEffect(() => {
@@ -152,6 +152,15 @@ const AppLayout = () => {
     location.pathname.startsWith('/tracker') ||
     location.pathname.startsWith('/studio') // 🚀 ADDED THIS LINE
   );
+
+  // 🚨 THE WIZARD INTERCEPTOR
+  if (authenticated && needsOnboarding) {
+    return (
+      <div className="h-screen font-sans flex overflow-hidden bg-white text-slate-900">
+        <OnboardingWizard />
+      </div>
+    );
+  }
 
   return (
     <div className={`h-screen font-sans flex overflow-hidden bg-[#F8FAFC] text-slate-900`}>
