@@ -44,6 +44,7 @@ import ProfileRoles from './profile/ProfileRoles';
 import OnboardingTour from './components/OnboardingTour';
 import XPLevelsPage from './pages/XPLevelsPage';
 import MarketplacePage from './pages/MarketplacePage';
+import ReferEarnPage from './pages/ReferEarnPage';
 
 // 🚀 OLD BEHAVIOR RESTORED: Dynamic Index Route
 const IndexRoute = () => {
@@ -105,6 +106,7 @@ const AppLayout = () => {
           <Route path="/sprints" element={<ShortTasksFeed />} />
           <Route path="/:id/airdropguide" element={<ProjectDetail />} />
           <Route path="/fundraising" element={<FundraisingPage />} />
+          <Route path="/refer" element={<ReferEarnPage />} />
           <Route path="/early-tasks" element={<EarlyTasks />} />
           <Route path="/early-airdrops" element={<EarlyAirdropsPage />} />
           <Route path="/subscription" element={<SubscriptionPage />} />
