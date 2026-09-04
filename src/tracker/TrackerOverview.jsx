@@ -13,6 +13,12 @@ import {
   SlidersHorizontal,
   Star,
   Trophy,
+  FolderCheck,
+  CheckCircle2,
+  Flame,
+  UsersRound,
+  CircleDollarSign,
+  Sailboat,
 } from 'lucide-react';
 import {
   Area,
@@ -39,7 +45,8 @@ const MotionDiv = motion.div;
 
 export default function TrackerOverview() {
   const [tasks, setTasks] = useState([]);
-  const [projects, setProjects] = useState([]);
+const [dailyTaskFeed, setDailyTaskFeed] = useState([]);
+const [projects, setProjects] = useState([]);
   const [globalTopProjects, setGlobalTopProjects] = useState([]);
   const [ledgerLogs, setLedgerLogs] = useState([]);
   const [platformUpdates, setPlatformUpdates] = useState([]);
@@ -79,6 +86,11 @@ export default function TrackerOverview() {
       `)
       .eq('auth_id', user.id);
 
+      const { data: customTasks } = await supabase
+  .from('tracker_custom_tasks')
+  .select('*')
+  .eq('auth_id', user.id);
+
     const { data: trackedProjects } = await supabase
       .from('tracker_user_projects')
       .select(`
@@ -114,7 +126,13 @@ export default function TrackerOverview() {
       .limit(15);
 
     setTasks(trackedTasks || []);
-    setProjects(trackedProjects || []);
+
+setDailyTaskFeed([
+  ...(trackedTasks || []),
+  ...(customTasks || []),
+]);
+
+setProjects(trackedProjects || []);
     setGlobalTopProjects(topJoined || []);
     setLedgerLogs(ledgerData || []);
     setPlatformUpdates(updatesData || []);
@@ -156,6 +174,46 @@ export default function TrackerOverview() {
   const totalCompleted = completedTasks.length;
   const totalProjects = projects.length;
   const engagementScore = Number(profileStats?.profile_engagement_score) || 0;
+  // ==========================================
+// STEP 7 - CURRENT WEEK START
+// ==========================================
+
+const now = new Date();
+
+const startOfWeek = new Date(now);
+
+const day = startOfWeek.getDay();
+
+const diff = day === 0 ? 6 : day - 1;
+
+startOfWeek.setDate(startOfWeek.getDate() - diff);
+
+startOfWeek.setHours(0, 0, 0, 0);
+
+
+
+// ==========================================
+// STEP 8 - PROJECTS ADDED THIS WEEK
+// ==========================================
+
+const projectsAddedThisWeek = projects.filter((project) => {
+  if (!project.created_at) return false;
+
+  return new Date(project.created_at) >= startOfWeek;
+}).length;
+
+
+
+// ==========================================
+// STEP 9 - TASKS COMPLETED THIS WEEK
+// ==========================================
+
+const tasksCompletedThisWeek = tasks.filter((task) => {
+  if (!task.last_completed_at) return false;
+
+  return new Date(task.last_completed_at) >= startOfWeek;
+}).length;
+
 
   const weeklyAnalytics = [];
   for (let i = 6; i >= 0; i -= 1) {
@@ -170,9 +228,43 @@ export default function TrackerOverview() {
     });
   }
 
-  const dailyTaskItems = tasks.filter((task) => task.custom_interval === '24h');
-  const dailyTasks = dailyTaskItems.length;
-  const completedDailyTasks = dailyTaskItems.filter((task) => task.last_completed_at).length;
+  // ==========================================
+// DAILY TASKS
+// Same logic as TrackerDaily.jsx
+// ==========================================
+
+const startOfToday = new Date();
+startOfToday.setHours(0, 0, 0, 0);
+
+
+const completedToday = (task) => {
+  if (!task.last_completed_at) return false;
+
+  return new Date(task.last_completed_at) >= startOfToday;
+};
+
+
+// Show:
+// 1. Pending tasks
+// 2. Tasks completed today
+
+const dailyTaskItems = dailyTaskFeed.filter((task) => {
+  if (task.status === 'pending') return true;
+
+  if (completedToday(task)) return true;
+
+  return false;
+});
+
+
+const dailyTasks = dailyTaskItems.length;
+
+
+// Completed tasks from today's feed
+
+const completedDailyTasks = dailyTaskItems.filter(
+  (task) => task.status === 'completed'
+).length;
   const weeklyTasks = tasks.filter((task) => task.custom_interval === '7d').length;
   const monthlyTasks = tasks.filter((task) => task.custom_interval === '30d').length;
   const oneTimeTasks = tasks.filter((task) => task.custom_interval === 'once').length;
@@ -226,27 +318,150 @@ export default function TrackerOverview() {
   return (
     <div className="w-full bg-white pb-8 text-slate-900">
       <div className="mx-auto w-full max-w-[1500px] space-y-5 px-4 py-6 sm:px-6 lg:px-8 lg:py-7">
-        <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
-          <div>
-            <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight text-slate-900">Welcome back, Sailor! <span>👋</span></h1>
-            <p className="mt-1 text-sm font-medium text-slate-500">Track smarter, farm better, earn more SAIL.</p>
-          </div>
-          <div className="flex w-full flex-wrap items-center gap-3 md:w-auto">
-            <Dropdown label="This Month" icon={CalendarDays} />
-            <button type="button" className="flex h-10 flex-grow items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 md:flex-grow-0">
-              <SlidersHorizontal className="h-4 w-4 text-slate-500" /> Customize
-            </button>
-          </div>
-        </div>
+        {/* =========================
+    DASHBOARD TOP SECTION
+========================= */}
 
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
-          <CircularStatCard label="Projects Joined" current={totalProjects} max={projectLimit} format="fraction" />
-          <CircularStatCard label="Tasks Completed" current={totalCompleted} max={tasks.length} format="fraction" />
-          <CircularStatCard label="Daily Tasks" current={completedDailyTasks} max={dailyTasks} format="fraction" />
-          <CircularStatCard label="Engagement Score" current={engagementScore} max={100} format="percent" />
-          <CircularStatCard label="SAIL Earned" current={lifetimeXP} max={lifetimeXP} format="raw" />
-          <CircularStatCard label="$1 / Mo Premium" isUpgrade onClick={() => navigate('/subscription')} />
-        </div>
+<div className="space-y-5">
+
+  {/* TOP WELCOME ROW */}
+  <div className="flex items-center justify-between gap-6">
+
+    {/* LEFT SIDE */}
+    <div>
+      <h1 className="flex items-center gap-2 text-[26px] font-bold tracking-tight text-slate-900">
+        Welcome back, Sail! <span>👋</span>
+      </h1>
+
+      <p className="mt-1 text-[13px] font-medium text-slate-500">
+        Track smarter
+        <span className="mx-1.5 text-slate-300">·</span>
+        Farm better
+        <span className="mx-1.5 text-slate-300">·</span>
+        Earn more SAIL.
+      </p>
+    </div>
+
+
+    {/* MOTIVATIONAL BANNER */}
+    <div className="relative flex h-[58px] w-[340px] items-center justify-between overflow-hidden rounded-xl border border-blue-100 bg-gradient-to-r from-blue-50 via-indigo-50 to-blue-100 px-5 shadow-sm">
+
+      <p className="relative z-10 text-[11px] font-semibold italic leading-[18px] text-blue-500">
+        "Small tasks today,<br />
+        bigger opportunities tomorrow."
+      </p>
+
+      {/* Decorative glow */}
+      <div className="absolute right-5 h-20 w-20 rounded-full bg-blue-300/20 blur-2xl" />
+
+      {/* Sailboat */}
+      <Sailboat
+        className="relative z-10 h-9 w-9 text-blue-500"
+        strokeWidth={1.5}
+      />
+
+    </div>
+
+  </div>
+
+
+  {/* =========================
+      6 TOP STAT CARDS
+  ========================= */}
+
+  <div className="grid grid-cols-6 gap-3">
+
+    {/* PROJECTS */}
+    <CompactStatCard
+      icon={FolderCheck}
+      iconClass="bg-blue-50 text-blue-600"
+      value={`${totalProjects} / ${projectLimit}`}
+      label="Projects Tracked"
+      footer={
+  projectsAddedThisWeek > 0
+    ? `+${projectsAddedThisWeek} this week`
+    : "No new projects"
+}
+footerClass={
+  projectsAddedThisWeek > 0
+    ? "text-emerald-500"
+    : "text-slate-400"
+}
+    />
+
+
+
+    {/* TASKS COMPLETED */}
+    <CompactStatCard
+      icon={CheckCircle2}
+      iconClass="bg-emerald-50 text-emerald-500"
+      value={`${totalCompleted} / ${tasks.length}`}
+      label="Tasks Completed"
+      footer={
+  tasksCompletedThisWeek > 0
+    ? `+${tasksCompletedThisWeek} this week`
+    : "No tasks this week"
+}
+footerClass={
+  tasksCompletedThisWeek > 0
+    ? "text-emerald-500"
+    : "text-slate-400"
+}
+      progress
+    />
+
+
+    {/* DAILY TASKS */}
+    <CompactStatCard
+      icon={Flame}
+      iconClass="bg-orange-50 text-orange-500"
+      value={dailyTasks}
+      label="Daily Tasks"
+      footer={`${Math.max(
+        0,
+        dailyTasks - completedDailyTasks
+      )} pending`}
+      footerClass="text-rose-500"
+    />
+
+
+    {/* ENGAGEMENT SCORE */}
+    <CompactStatCard
+      icon={UsersRound}
+      iconClass="bg-violet-50 text-violet-500"
+      value={`${Math.round(engagementScore)}%`}
+      label="Engagement Score"
+      footer="Current score"
+footerClass="text-slate-400"
+    />
+
+
+    {/* SAIL EARNED */}
+    <CompactStatCard
+      icon={CircleDollarSign}
+      iconClass="bg-blue-50 text-blue-600"
+      value={lifetimeXP.toLocaleString()}
+      label="SAIL Earned"
+      footer="Lifetime total"
+footerClass="text-slate-400"
+    />
+
+
+    {/* PREMIUM */}
+    <CompactStatCard
+      icon={Crown}
+      iconClass="bg-violet-50 text-violet-600"
+      value="$1 / mo"
+      label="Premium Plan"
+      footer="Upgrade →"
+      footerClass="text-violet-500"
+      clickable
+      onClick={() => navigate('/subscription')}
+    />
+
+  </div>
+
+</div>
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
           <div className="flex flex-col gap-4 lg:col-span-8">
@@ -417,50 +632,93 @@ function Dropdown({ label, icon: Icon }) {
   return <button type="button" className="flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 text-sm font-bold text-slate-700 shadow-sm hover:bg-slate-50">{Icon && <Icon className="h-4 w-4 text-slate-500" />}{label}<ChevronDown className="ml-1 h-4 w-4 text-slate-400" /></button>;
 }
 
-function CircularStatCard({ label, current = 0, max = 0, format = 'fraction', isUpgrade = false, onClick }) {
-  const radius = 42;
-  const circumference = 2 * Math.PI * radius;
-  const progress = isUpgrade || format === 'raw' ? 1 : max > 0 ? Math.min(1, Math.max(0, current / max)) : 0;
-  const strokeDashoffset = circumference * (1 - progress);
-  const formattedValue = format === 'fraction'
-    ? `${current}/${max}`
-    : format === 'percent'
-      ? `${Math.round(current)}%`
-      : Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(current).toLowerCase();
-  const content = (
+function CompactStatCard({
+  icon: Icon,
+  iconClass = '',
+  value,
+  label,
+  footer,
+  footerClass = 'text-slate-400',
+  progress = false,
+  clickable = false,
+  onClick,
+}) {
+
+  const cardContent = (
     <>
-      <div className="relative grid h-24 w-24 place-items-center">
-        <svg className="h-full w-full -rotate-90" viewBox="0 0 100 100" aria-hidden="true">
-          {isUpgrade && (
-            <defs>
-              <linearGradient id="premium-ring-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#7c3aed" />
-                <stop offset="100%" stopColor="#2563eb" />
-              </linearGradient>
-            </defs>
-          )}
-          <circle cx="50" cy="50" r={radius} fill="none" stroke="#eff6ff" strokeWidth="8" />
-          <circle
-            cx="50"
-            cy="50"
-            r={radius}
-            fill="none"
-            stroke={isUpgrade ? 'url(#premium-ring-gradient)' : '#2563eb'}
-            strokeWidth="8"
-            strokeLinecap="round"
-            strokeDasharray={circumference}
-            strokeDashoffset={strokeDashoffset}
-          />
-        </svg>
-        <span className="absolute text-lg font-black text-slate-900">{isUpgrade ? <Crown className="h-6 w-6 text-violet-600" /> : formattedValue}</span>
+      {/* ICON */}
+      <div
+        className={`flex h-10 w-10 items-center justify-center rounded-xl ${iconClass}`}
+      >
+        <Icon
+          className="h-[19px] w-[19px]"
+          strokeWidth={2.2}
+        />
       </div>
-      <span className="mt-3 text-center text-[11px] font-bold text-slate-500">{label}</span>
+
+
+      {/* VALUE */}
+      <div className="mt-3">
+        <div className="text-[19px] font-bold tracking-tight text-slate-900">
+          {value}
+        </div>
+
+        <div className="mt-0.5 text-[10px] font-medium text-slate-500">
+          {label}
+        </div>
+      </div>
+
+
+      {/* BOTTOM */}
+      <div className="mt-auto flex items-end justify-between pt-3">
+
+        <span
+          className={`text-[10px] font-semibold ${footerClass}`}
+        >
+          {footer}
+        </span>
+
+
+        {/* SMALL GRAPH */}
+        {progress && (
+          <div className="flex items-end gap-[3px]">
+
+            <span className="h-[5px] w-[3px] rounded-sm bg-blue-200" />
+
+            <span className="h-[9px] w-[3px] rounded-sm bg-blue-400" />
+
+            <span className="h-[14px] w-[3px] rounded-sm bg-blue-600" />
+
+          </div>
+        )}
+
+      </div>
     </>
   );
 
-  return onClick
-    ? <button type="button" onClick={onClick} className="flex min-h-[158px] flex-col items-center justify-center rounded-xl border border-slate-100 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">{content}</button>
-    : <div className="flex min-h-[158px] flex-col items-center justify-center rounded-xl border border-slate-100 bg-white p-4 shadow-sm">{content}</div>;
+
+  const className =
+    "flex h-[142px] flex-col rounded-xl border border-slate-200 bg-white p-4 text-left shadow-[0_2px_10px_rgba(15,23,42,0.03)] transition-all duration-200";
+
+
+  if (clickable) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={`${className} cursor-pointer hover:-translate-y-[2px] hover:border-violet-200 hover:shadow-lg`}
+      >
+        {cardContent}
+      </button>
+    );
+  }
+
+
+  return (
+    <div className={className}>
+      {cardContent}
+    </div>
+  );
 }
 
 function PremiumCard({ navigate }) {
