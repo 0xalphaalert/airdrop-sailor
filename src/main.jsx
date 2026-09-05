@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
 import './index.css';
 import { HelmetProvider } from 'react-helmet-async';
+import { AppKitProvider } from './config/appkit.jsx';
 
 if (import.meta.env.DEV && 'serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
@@ -18,8 +19,10 @@ if (import.meta.env.DEV && 'serviceWorker' in navigator) {
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <HelmetProvider>
-    <App />
-</HelmetProvider>
+    <AppKitProvider>
+      <HelmetProvider>
+        <App />
+      </HelmetProvider>
+    </AppKitProvider>
   </React.StrictMode>,
 );
