@@ -717,223 +717,258 @@ export default function CreatorStudio() {
 
     // --- TOP 5 EARLY ALPHA / WHITELIST BUILDERS ---
 const top5EarlyXList = selectedList.slice(0, 5).map((item, idx) => {
-  const name = item.name || item.project_name || 'Project';
+  const name = item.name || item.project_name || '';
+  if (!name) return '';
 
-  const cleanValue = (value) => {
-    if (!value) return '';
-    const str = String(value).trim();
+  const tier = item.tier || '';
+  const status = item.status || '';
+  const airdropStatus = item.airdrop_status || '';
+  const description = item.description || '';
+  const xLink = item.x_link || '';
 
-    if (
-      !str ||
-      ['TBA', 'NA', 'N/A', 'UNKNOWN', 'NULL', 'UNDEFINED'].includes(str.toUpperCase())
-    ) {
-      return '';
-    }
-
-    return str;
-  };
-
-  const projectTier = cleanValue(item.tier);
-  const projectStatus = cleanValue(item.status);
-  const airdropStatus = cleanValue(item.airdrop_status);
-  const description = cleanValue(item.description);
-  const funding = cleanValue(item.funding);
-  const investors = cleanValue(item.lead_investors || item.lead_investor);
-  const xLink = cleanValue(item.x_link);
-  const discordLink = cleanValue(item.discord_link);
-
-  // -----------------------------
+  // ---------------------------------------------------------
   // TASKS
-  // -----------------------------
-  const taskData = Array.isArray(item.tasks)
-    ? item.tasks.filter(Boolean)
-    : [];
+  // Priority:
+  // 1. post_json.steps
+  // 2. tutorial_markdown numbered steps
+  // 3. task description
+  // 4. task name
+  // ---------------------------------------------------------
 
-  const taskBlocks = taskData.map((task) => {
-    const taskName = cleanValue(task.name);
-    const taskLink = cleanValue(task.link || task.external_link);
-    const taskTime = task.time_minutes
-      ? `${task.time_minutes} minutes`
-      : '';
-    const taskCost =
-      task.cost !== undefined &&
-      task.cost !== null &&
-      String(task.cost).trim() !== ''
-        ? String(task.cost)
-        : '';
+  const taskBlocks = [];
 
-    const postJson = parseField(task.post_json);
+  if (Array.isArray(item.tasks)) {
+    item.tasks.forEach((task) => {
+      if (!task) return;
 
-    let steps = [];
+      const postJson = parseField(task.post_json);
 
-    // Prefer structured post_json steps
-    if (postJson?.steps && Array.isArray(postJson.steps)) {
-      steps = postJson.steps
-        .map(step => cleanValue(step.action || step.name))
-        .filter(Boolean);
-    }
+      let steps = [];
 
-    // Otherwise extract numbered steps from tutorial markdown
-    if (steps.length === 0 && task.tutorial_markdown) {
-      const matches = task.tutorial_markdown.match(
-        /^\s*\d+\.\s+(.+)$/gm
-      );
-
-      if (matches) {
-        steps = matches
-          .map(step => step.replace(/^\s*\d+\.\s+/, '').trim())
+      // 1. Prefer post_json.steps
+      if (
+        postJson?.steps &&
+        Array.isArray(postJson.steps) &&
+        postJson.steps.length > 0
+      ) {
+        steps = postJson.steps
+          .map(step => {
+            if (typeof step === 'string') return step;
+            return step?.action || step?.name || '';
+          })
           .filter(Boolean);
       }
-    }
 
-    // Extract useful guide text without copying the entire markdown
-    let guide = cleanValue(task.tutorial_markdown);
+      // 2. Otherwise extract numbered steps from tutorial_markdown
+      if (steps.length === 0 && task.tutorial_markdown) {
+        const markdown = String(task.tutorial_markdown);
 
-    if (guide) {
-      guide = guide
-        .replace(/!\[.*?\]\(.*?\)/g, '')
-        .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '$1: $2')
-        .replace(/#{1,6}\s*/g, '')
-        .replace(/\*\*/g, '')
-        .replace(/\r/g, '')
-        .trim();
-    }
+        const matches = markdown.match(
+          /^\s*\d+\.\s+(.+)$/gm
+        );
 
-    return {
-      name: taskName,
-      recurring: cleanValue(task.recurring),
-      time: taskTime,
-      cost: taskCost,
-      link: taskLink,
-      steps,
-      guide
-    };
-  });
+        if (matches) {
+          steps = matches
+            .map(step =>
+              step
+                .replace(/^\s*\d+\.\s+/, '')
+                .trim()
+            )
+            .filter(Boolean);
+        }
+      }
 
-  // -----------------------------
+      // 3. Otherwise use task description if available
+      if (
+        steps.length === 0 &&
+        task.description &&
+        String(task.description).trim()
+      ) {
+        steps = [String(task.description).trim()];
+      }
+
+      // Remove duplicate steps
+      steps = [...new Set(steps)];
+
+      const taskUrl =
+        postJson?.primary_url ||
+        task.link ||
+        task.external_link ||
+        '';
+
+      const taskName = task.name || '';
+
+      const recurring = task.recurring || '';
+      const time = task.time_minutes;
+      const cost = task.cost;
+
+      taskBlocks.push({
+        name: taskName,
+        steps,
+        url: taskUrl,
+        recurring,
+        time,
+        cost
+      });
+    });
+  }
+
+  // ---------------------------------------------------------
   // DISCORD ROLES
-  // -----------------------------
-  const roleData = Array.isArray(item.discord_roles)
-    ? item.discord_roles.filter(Boolean)
+  // ---------------------------------------------------------
+
+  const discordRoles = Array.isArray(item.discord_roles)
+    ? item.discord_roles
+        .filter(role =>
+          role &&
+          role.role_name &&
+          role.requirements &&
+          !['TBA', 'NA', 'N/A', 'NULL', 'Unknown']
+            .includes(String(role.role_name).trim())
+        )
+        .map(role => ({
+          name: String(role.role_name).trim(),
+          requirement: String(role.requirements).trim()
+        }))
     : [];
 
-  const discordRoles = roleData.map(role => ({
-    name: cleanValue(role.role_name),
-    requirements: cleanValue(role.requirements),
-    perks: cleanValue(role.perks),
-    difficulty: cleanValue(role.difficulty_level)
-  })).filter(role => role.name);
+  const discordLink = item.discord_link || '';
 
-  // -----------------------------
-  // TOKENOMICS
-  // -----------------------------
-  let tokenomics = '';
+  // ---------------------------------------------------------
+  // PROJECT RESEARCH
+  // ---------------------------------------------------------
 
-  try {
-    const parsedTokenomics = parseField(item.tokenomics_details);
+  const funding = item.funding || '';
 
-    if (Array.isArray(parsedTokenomics)) {
-      tokenomics = parsedTokenomics
-        .filter(Boolean)
-        .map(t => JSON.stringify(t))
-        .join('\n');
-    } else if (
-      parsedTokenomics &&
-      typeof parsedTokenomics === 'object'
-    ) {
-      tokenomics = JSON.stringify(parsedTokenomics);
-    }
-  } catch (e) {
-    tokenomics = '';
+  const investors =
+    item.lead_investors ||
+    item.lead_investor ||
+    '';
+
+  const founders = item.founders_details || '';
+
+  const tokenomics = item.tokenomics_details || '';
+
+  // ---------------------------------------------------------
+  // BUILD CLEAN SOURCE DATA FOR THE AI
+  // ---------------------------------------------------------
+
+  const lines = [];
+
+  lines.push(`PROJECT ${idx + 1}`);
+  lines.push(`Name: ${name}`);
+
+  if (tier) {
+    lines.push(`Tier: ${tier}`);
   }
 
-  // -----------------------------
-  // FOUNDERS
-  // -----------------------------
-  let founders = '';
-
-  try {
-    const parsedFounders = parseField(item.founders_details);
-
-    if (Array.isArray(parsedFounders)) {
-      founders = parsedFounders
-        .filter(f => f && f.name && f.name !== 'Unknown')
-        .map(f => {
-          const role = cleanValue(f.role);
-          const background = cleanValue(f.background);
-
-          return [
-            f.name,
-            role ? `Role: ${role}` : '',
-            background ? `Background: ${background}` : ''
-          ]
-            .filter(Boolean)
-            .join(' — ');
-        })
-        .join('\n');
-    }
-  } catch (e) {
-    founders = '';
+  if (status) {
+    lines.push(`Current Phase: ${status}`);
   }
 
-  // -----------------------------
-  // AI RESEARCH
-  // -----------------------------
-  let research = '';
-
-  try {
-    const parsedResearch = parseField(item.ai_research_data);
-
-    if (parsedResearch) {
-      research =
-        typeof parsedResearch === 'string'
-          ? parsedResearch
-          : JSON.stringify(parsedResearch);
-    }
-  } catch (e) {
-    research = '';
+  if (airdropStatus) {
+    lines.push(`Airdrop Status: ${airdropStatus}`);
   }
 
-  // IMPORTANT:
-  // JavaScript supplies factual data only.
-  // AI decides what is useful and how to write it.
-  return `
-PROJECT ${idx + 1}
-Name: ${name}
-Tier: ${projectTier}
-Current Phase: ${projectStatus}
-Airdrop Status: ${airdropStatus}
-X: ${xLink}
+  if (xLink) {
+    lines.push(`X: ${xLink}`);
+  }
 
-Description:
-${description}
+  if (description) {
+    lines.push(`Description: ${description}`);
+  }
 
-Funding:
-${funding}
+  // ---------------------------------------------------------
+  // TASK DATA
+  // ---------------------------------------------------------
 
-Investors:
-${investors}
+  if (taskBlocks.length > 0) {
+    lines.push('');
+    lines.push('TASKS:');
 
-Founders:
-${founders}
+    taskBlocks.forEach((task, taskIndex) => {
+      lines.push(`Task ${taskIndex + 1}: ${task.name}`);
 
-Tokenomics:
-${tokenomics}
+      if (task.recurring) {
+        lines.push(`Recurring: ${task.recurring}`);
+      }
 
-Tasks:
-${JSON.stringify(taskBlocks, null, 2)}
+      if (
+        task.time !== undefined &&
+        task.time !== null &&
+        task.time !== ''
+      ) {
+        lines.push(`Time: ${task.time} minutes`);
+      }
 
-Discord Roles:
-${JSON.stringify(discordRoles, null, 2)}
+      if (
+        task.cost !== undefined &&
+        task.cost !== null &&
+        task.cost !== ''
+      ) {
+        lines.push(`Cost: ${task.cost}`);
+      }
 
-Discord Link:
-${discordLink}
+      if (task.steps.length > 0) {
+        lines.push('Steps:');
 
-Research:
-${research}
-`.trim();
-}).join('\n\n====================\n\n');
+        task.steps.forEach((step, stepIndex) => {
+          lines.push(`${stepIndex + 1}. ${step}`);
+        });
+      }
 
+      if (task.url) {
+        lines.push(`Task Link: ${task.url}`);
+      }
+
+      lines.push('');
+    });
+  }
+
+  // ---------------------------------------------------------
+  // DISCORD
+  // ---------------------------------------------------------
+
+  if (discordRoles.length > 0) {
+    lines.push('DISCORD ROLES:');
+
+    discordRoles.forEach(role => {
+      lines.push(
+        `• ${role.name} — ${role.requirement}`
+      );
+    });
+
+    if (discordLink) {
+      lines.push(`Discord Link: ${discordLink}`);
+    }
+
+    lines.push('');
+  }
+
+  // ---------------------------------------------------------
+  // RESEARCH DATA
+  // ---------------------------------------------------------
+
+  if (funding) {
+    lines.push(`Funding: ${funding}`);
+  }
+
+  if (investors) {
+    lines.push(`Investors: ${investors}`);
+  }
+
+  if (founders) {
+    lines.push(`Founders: ${founders}`);
+  }
+
+  if (tokenomics) {
+    lines.push(`Tokenomics: ${tokenomics}`);
+  }
+
+  return lines.join('\n');
+})
+.filter(Boolean)
+.join('\n\n━━━━━━━━━━━━━━━━━━\n\n');
     const top5EarlyTelegramList = selectedList.slice(0, 5).map((item, idx) => {
       const name = item.name || item.project_name || 'Project';
       const link = item.x_link || item.link || 'https://airdropsailor.xyz';
