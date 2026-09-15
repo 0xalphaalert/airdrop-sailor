@@ -716,48 +716,223 @@ export default function CreatorStudio() {
     }).join('\n');
 
     // --- TOP 5 EARLY ALPHA / WHITELIST BUILDERS ---
-    const top5EarlyXList = selectedList.slice(0, 5).map((item, idx) => {
-      const name = item.name || item.project_name || 'Project';
-      
-      // Grab a short description
-      let desc = item.description || `${name} is an early-stage protocol currently rolling out its ecosystem architecture.`;
-      if (desc.length > 180) desc = desc.split('.')[0] + '.'; // Keep it to one sentence for Twitter
+const top5EarlyXList = selectedList.slice(0, 5).map((item, idx) => {
+  const name = item.name || item.project_name || 'Project';
 
-      const link = item.x_link || item.link || 'https://airdropsailor.xyz';
-      
-      // 1. Multi-task handling: Grab the first available task's steps
-      let steps = [];
-      if (item.tasks && Array.isArray(item.tasks) && item.tasks.length > 0) {
-        const t = item.tasks[0]; // Grab the primary task for the thread
-        const postJson = parseField(t.post_json);
-        
-        if (postJson?.steps && Array.isArray(postJson.steps)) {
-          steps = postJson.steps.slice(0, 4).map(s => `• ${s.action || s.name}`);
-        } else if (t.tutorial_markdown) {
-          const matches = t.tutorial_markdown.match(/\d+\.\s+([^\n]+)/g);
-          if (matches) steps = matches.slice(0, 4).map(s => `• ${s.replace(/^\d+\.\s+/, '')}`);
-        }
-      }
-      
-      // 2. Fallback steps if no tasks are mapped yet
-      if (steps.length === 0) {
-        steps = [
-          '• Join the waitlist / Discord', 
-          '• Explore the ecosystem', 
-          '• Check current rewards & missions', 
-          '• Claim available early roles'
-        ];
-      }
+  const cleanValue = (value) => {
+    if (!value) return '';
+    const str = String(value).trim();
 
-      // 3. Extract "Why we're watching" from AI research data
-      let whyWatching = `${name} is currently in an active ecosystem-growth phase, with early-user participation and rewards playing a major role.`;
-      const aiData = parseField(item.ai_research_data);
-      if (aiData?.summary) {
-         whyWatching = aiData.summary; // Pulls from your DB's JSON structure
-      }
+    if (
+      !str ||
+      ['TBA', 'NA', 'N/A', 'UNKNOWN', 'NULL', 'UNDEFINED'].includes(str.toUpperCase())
+    ) {
+      return '';
+    }
 
-      return `${idx + 1}/5 — ${name}\n${desc}\n\nWhat to do:\n${steps.join('\n')}\n\n🔗 ${link}\n\nWhy we're watching:\n${whyWatching}`;
-    }).join('\n\n');
+    return str;
+  };
+
+  const projectTier = cleanValue(item.tier);
+  const projectStatus = cleanValue(item.status);
+  const airdropStatus = cleanValue(item.airdrop_status);
+  const description = cleanValue(item.description);
+  const funding = cleanValue(item.funding);
+  const investors = cleanValue(item.lead_investors || item.lead_investor);
+  const xLink = cleanValue(item.x_link);
+  const discordLink = cleanValue(item.discord_link);
+
+  // -----------------------------
+  // TASKS
+  // -----------------------------
+  const taskData = Array.isArray(item.tasks)
+    ? item.tasks.filter(Boolean)
+    : [];
+
+  const taskBlocks = taskData.map((task) => {
+    const taskName = cleanValue(task.name);
+    const taskLink = cleanValue(task.link || task.external_link);
+    const taskTime = task.time_minutes
+      ? `${task.time_minutes} minutes`
+      : '';
+    const taskCost =
+      task.cost !== undefined &&
+      task.cost !== null &&
+      String(task.cost).trim() !== ''
+        ? String(task.cost)
+        : '';
+
+    const postJson = parseField(task.post_json);
+
+    let steps = [];
+
+    // Prefer structured post_json steps
+    if (postJson?.steps && Array.isArray(postJson.steps)) {
+      steps = postJson.steps
+        .map(step => cleanValue(step.action || step.name))
+        .filter(Boolean);
+    }
+
+    // Otherwise extract numbered steps from tutorial markdown
+    if (steps.length === 0 && task.tutorial_markdown) {
+      const matches = task.tutorial_markdown.match(
+        /^\s*\d+\.\s+(.+)$/gm
+      );
+
+      if (matches) {
+        steps = matches
+          .map(step => step.replace(/^\s*\d+\.\s+/, '').trim())
+          .filter(Boolean);
+      }
+    }
+
+    // Extract useful guide text without copying the entire markdown
+    let guide = cleanValue(task.tutorial_markdown);
+
+    if (guide) {
+      guide = guide
+        .replace(/!\[.*?\]\(.*?\)/g, '')
+        .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '$1: $2')
+        .replace(/#{1,6}\s*/g, '')
+        .replace(/\*\*/g, '')
+        .replace(/\r/g, '')
+        .trim();
+    }
+
+    return {
+      name: taskName,
+      recurring: cleanValue(task.recurring),
+      time: taskTime,
+      cost: taskCost,
+      link: taskLink,
+      steps,
+      guide
+    };
+  });
+
+  // -----------------------------
+  // DISCORD ROLES
+  // -----------------------------
+  const roleData = Array.isArray(item.discord_roles)
+    ? item.discord_roles.filter(Boolean)
+    : [];
+
+  const discordRoles = roleData.map(role => ({
+    name: cleanValue(role.role_name),
+    requirements: cleanValue(role.requirements),
+    perks: cleanValue(role.perks),
+    difficulty: cleanValue(role.difficulty_level)
+  })).filter(role => role.name);
+
+  // -----------------------------
+  // TOKENOMICS
+  // -----------------------------
+  let tokenomics = '';
+
+  try {
+    const parsedTokenomics = parseField(item.tokenomics_details);
+
+    if (Array.isArray(parsedTokenomics)) {
+      tokenomics = parsedTokenomics
+        .filter(Boolean)
+        .map(t => JSON.stringify(t))
+        .join('\n');
+    } else if (
+      parsedTokenomics &&
+      typeof parsedTokenomics === 'object'
+    ) {
+      tokenomics = JSON.stringify(parsedTokenomics);
+    }
+  } catch (e) {
+    tokenomics = '';
+  }
+
+  // -----------------------------
+  // FOUNDERS
+  // -----------------------------
+  let founders = '';
+
+  try {
+    const parsedFounders = parseField(item.founders_details);
+
+    if (Array.isArray(parsedFounders)) {
+      founders = parsedFounders
+        .filter(f => f && f.name && f.name !== 'Unknown')
+        .map(f => {
+          const role = cleanValue(f.role);
+          const background = cleanValue(f.background);
+
+          return [
+            f.name,
+            role ? `Role: ${role}` : '',
+            background ? `Background: ${background}` : ''
+          ]
+            .filter(Boolean)
+            .join(' — ');
+        })
+        .join('\n');
+    }
+  } catch (e) {
+    founders = '';
+  }
+
+  // -----------------------------
+  // AI RESEARCH
+  // -----------------------------
+  let research = '';
+
+  try {
+    const parsedResearch = parseField(item.ai_research_data);
+
+    if (parsedResearch) {
+      research =
+        typeof parsedResearch === 'string'
+          ? parsedResearch
+          : JSON.stringify(parsedResearch);
+    }
+  } catch (e) {
+    research = '';
+  }
+
+  // IMPORTANT:
+  // JavaScript supplies factual data only.
+  // AI decides what is useful and how to write it.
+  return `
+PROJECT ${idx + 1}
+Name: ${name}
+Tier: ${projectTier}
+Current Phase: ${projectStatus}
+Airdrop Status: ${airdropStatus}
+X: ${xLink}
+
+Description:
+${description}
+
+Funding:
+${funding}
+
+Investors:
+${investors}
+
+Founders:
+${founders}
+
+Tokenomics:
+${tokenomics}
+
+Tasks:
+${JSON.stringify(taskBlocks, null, 2)}
+
+Discord Roles:
+${JSON.stringify(discordRoles, null, 2)}
+
+Discord Link:
+${discordLink}
+
+Research:
+${research}
+`.trim();
+}).join('\n\n====================\n\n');
 
     const top5EarlyTelegramList = selectedList.slice(0, 5).map((item, idx) => {
       const name = item.name || item.project_name || 'Project';
