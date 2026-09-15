@@ -982,6 +982,8 @@ export default function CreatorStudio() {
     let tasksNumbered = '';
     let tasksTelegram = '';
     let taskTime = '5';
+let taskCost = '0';
+let tutorialMarkdown = '';
 
     // 1. Check if item has `ai_research_data` (From funding_opportunities table)
     let aiResearchData = parseField(data.ai_research_data);
@@ -1021,6 +1023,13 @@ export default function CreatorStudio() {
         const postJson = parseField(t.post_json);
         const headline = postJson?.headline || t.name || 'Available Task';
         const url = postJson?.primary_url || t.link || t.external_link || data.x_link || '';
+        if (!tutorialMarkdown && t.tutorial_markdown) {
+  tutorialMarkdown = t.tutorial_markdown;
+}
+
+if (taskCost === '0' && t.cost !== undefined && t.cost !== null) {
+  taskCost = String(t.cost);
+}
 
         let steps = [];
         if (postJson?.steps && Array.isArray(postJson.steps) && postJson.steps.length > 0) {
@@ -1090,10 +1099,10 @@ export default function CreatorStudio() {
 
     // Default fallback if no tasks were found in any source
     if (!formattedTaskBullets) {
-      formattedTaskBullets = '• Connect Wallet\n• Interact with dApp';
-      tasksNumbered = '1. Connect Wallet\n2. Interact with dApp';
-      tasksTelegram = '🔹 Connect Wallet\n🔹 Interact with dApp';
-    }
+  formattedTaskBullets = '';
+  tasksNumbered = '';
+  tasksTelegram = '';
+}
 
     const replacePlaceholders = (template, itemData) => {
       let text = template;
@@ -1104,6 +1113,20 @@ export default function CreatorStudio() {
       const handleName = realXLink ? `@${realXLink.split('/').pop()}` : realProjectName;
       const realTier = itemData.tier || itemData.projects?.tier || 'Tier 3';
       const realFunding = itemData.funding || itemData.funding_amount || itemData.projects?.funding || 'TBA';
+      const realStatus =
+  itemData.status ||
+  itemData.projects?.status ||
+  '';
+
+const realAirdropStatus =
+  itemData.airdrop_status ||
+  itemData.projects?.airdrop_status ||
+  '';
+
+const realDescription =
+  itemData.description ||
+  itemData.projects?.description ||
+  '';
 
       // --- SINGLE DISCORD ROLES PARSING ---
       const rolesArray = itemData.discord_roles || [];
@@ -1139,10 +1162,13 @@ export default function CreatorStudio() {
       const discordLink = itemData.discord_link || itemData.projects?.discord_link || 'https://discord.gg/...';
 
       const replacements = {
-        // Project
-        '{{project_name}}': realProjectName,
-        '{{project_tier}}': realTier,
-        '{{project_handle}}': handleName,
+  // Project
+  '{{project_name}}': realProjectName,
+  '{{project_tier}}': realTier,
+  '{{project_handle}}': handleName,
+  '{{project_status}}': realStatus,
+  '{{airdrop_status}}': realAirdropStatus,
+  '{{project_description}}': realDescription,
         // Funding
         '{{funding_amount}}': realFunding,
         '{{round}}': itemData.round || itemData.status || 'Seed',
@@ -1155,10 +1181,13 @@ export default function CreatorStudio() {
         '{{founder_name}}': founderNamesShort,
         // Single Task Data (Mapped from `post_json` or task object)
         '{{task_headline}}': taskHeadline,
-        '{{task_steps_bullets}}': formattedTaskBullets,
-        '{{task_steps_numbered}}': tasksNumbered,
-        '{{task_primary_url}}': taskPrimaryUrl,
-        '{{task_time}}': taskTime,
+'{{task_steps_bullets}}': formattedTaskBullets,
+'{{task_steps_numbered}}': tasksNumbered,
+'{{task_primary_url}}': taskPrimaryUrl,
+'{{task_time}}': taskTime,
+'{{task_cost}}': taskCost,
+'{{primary_task_link}}': taskPrimaryUrl,
+'{{tutorial_markdown}}': tutorialMarkdown,
         '{{tasks_guide}}': tasksNumbered,
         '{{tasks_guide_telegram}}': tasksTelegram,
         '{{tasks_guide_plain}}': tasksNumbered,
