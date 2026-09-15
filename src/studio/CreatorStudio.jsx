@@ -718,34 +718,35 @@ export default function CreatorStudio() {
     // --- TOP 5 EARLY ALPHA / WHITELIST BUILDERS ---
 const top5EarlyXList = selectedList.slice(0, 5).map((item, idx) => {
   const name = item.name || item.project_name || '';
-  if (!name) return '';
-
   const tier = item.tier || '';
-  const status = item.status || '';
+  const phase = item.status || item.current_phase || '';
   const airdropStatus = item.airdrop_status || '';
   const description = item.description || '';
   const xLink = item.x_link || '';
 
-  // ---------------------------------------------------------
+  // --------------------------------------------------
   // TASKS
-  // Priority:
-  // 1. post_json.steps
-  // 2. tutorial_markdown numbered steps
-  // 3. task description
-  // 4. task name
-  // ---------------------------------------------------------
+  // --------------------------------------------------
+  let taskBlocks = [];
 
-  const taskBlocks = [];
-
-  if (Array.isArray(item.tasks)) {
+  if (Array.isArray(item.tasks) && item.tasks.length > 0) {
     item.tasks.forEach((task) => {
-      if (!task) return;
-
       const postJson = parseField(task.post_json);
+
+      const taskName = task.name || postJson?.headline || '';
+      const recurring = task.recurring || '';
+      const cost = task.cost ?? '';
+      const time = task.time_minutes ?? '';
+
+      const taskLink =
+        task.link ||
+        task.external_link ||
+        postJson?.primary_url ||
+        '';
 
       let steps = [];
 
-      // 1. Prefer post_json.steps
+      // 1. Prefer post_json steps
       if (
         postJson?.steps &&
         Array.isArray(postJson.steps) &&
@@ -754,7 +755,7 @@ const top5EarlyXList = selectedList.slice(0, 5).map((item, idx) => {
         steps = postJson.steps
           .map(step => {
             if (typeof step === 'string') return step;
-            return step?.action || step?.name || '';
+            return step.action || step.name || step.description || '';
           })
           .filter(Boolean);
       }
@@ -764,13 +765,13 @@ const top5EarlyXList = selectedList.slice(0, 5).map((item, idx) => {
         const markdown = String(task.tutorial_markdown);
 
         const matches = markdown.match(
-          /^\s*\d+\.\s+(.+)$/gm
+          /(?:^|\n)\s*\d+\.\s+([^\n]+)/g
         );
 
         if (matches) {
           steps = matches
-            .map(step =>
-              step
+            .map(line =>
+              line
                 .replace(/^\s*\d+\.\s+/, '')
                 .trim()
             )
@@ -778,197 +779,153 @@ const top5EarlyXList = selectedList.slice(0, 5).map((item, idx) => {
         }
       }
 
-      // 3. Otherwise use task description if available
-      if (
-        steps.length === 0 &&
-        task.description &&
-        String(task.description).trim()
-      ) {
-        steps = [String(task.description).trim()];
-      }
-
-      // Remove duplicate steps
-      steps = [...new Set(steps)];
-
-      const taskUrl =
-        postJson?.primary_url ||
-        task.link ||
-        task.external_link ||
+      // 3. Task description as fallback
+      const taskDescription =
+        task.description ||
+        postJson?.description ||
         '';
-
-      const taskName = task.name || '';
-
-      const recurring = task.recurring || '';
-      const time = task.time_minutes;
-      const cost = task.cost;
 
       taskBlocks.push({
         name: taskName,
-        steps,
-        url: taskUrl,
         recurring,
+        cost,
         time,
-        cost
+        link: taskLink,
+        steps,
+        description: taskDescription
       });
     });
   }
 
-  // ---------------------------------------------------------
+  // --------------------------------------------------
   // DISCORD ROLES
-  // ---------------------------------------------------------
+  // --------------------------------------------------
+  let discordBlocks = [];
 
-  const discordRoles = Array.isArray(item.discord_roles)
-    ? item.discord_roles
-        .filter(role =>
-          role &&
-          role.role_name &&
-          role.requirements &&
-          !['TBA', 'NA', 'N/A', 'NULL', 'Unknown']
-            .includes(String(role.role_name).trim())
-        )
-        .map(role => ({
-          name: String(role.role_name).trim(),
-          requirement: String(role.requirements).trim()
-        }))
-    : [];
+  if (
+    Array.isArray(item.discord_roles) &&
+    item.discord_roles.length > 0
+  ) {
+    discordBlocks = item.discord_roles
+      .map(role => ({
+        name: role.role_name || '',
+        requirement:
+          role.requirements ||
+          role.perks ||
+          '',
+      }))
+      .filter(role => role.name);
+  }
 
   const discordLink = item.discord_link || '';
 
-  // ---------------------------------------------------------
-  // PROJECT RESEARCH
-  // ---------------------------------------------------------
-
-  const funding = item.funding || '';
+  // --------------------------------------------------
+  // FUNDING / INVESTORS
+  // --------------------------------------------------
+  const funding =
+    item.funding ||
+    item.funding_amount ||
+    '';
 
   const investors =
     item.lead_investors ||
     item.lead_investor ||
     '';
 
-  const founders = item.founders_details || '';
-
-  const tokenomics = item.tokenomics_details || '';
-
-  // ---------------------------------------------------------
-  // BUILD CLEAN SOURCE DATA FOR THE AI
-  // ---------------------------------------------------------
-
-  const lines = [];
-
-  lines.push(`PROJECT ${idx + 1}`);
-  lines.push(`Name: ${name}`);
+  // --------------------------------------------------
+  // BUILD FACTUAL SOURCE BLOCK
+  // --------------------------------------------------
+  let output = `${idx + 1}/5 — ${name}`;
 
   if (tier) {
-    lines.push(`Tier: ${tier}`);
+    output += `\nTier: ${tier}`;
   }
 
-  if (status) {
-    lines.push(`Current Phase: ${status}`);
+  if (phase) {
+    output += `\nCurrent Phase: ${phase}`;
   }
 
   if (airdropStatus) {
-    lines.push(`Airdrop Status: ${airdropStatus}`);
+    output += `\nAirdrop Status: ${airdropStatus}`;
   }
 
   if (xLink) {
-    lines.push(`X: ${xLink}`);
+    output += `\nX: ${xLink}`;
   }
 
   if (description) {
-    lines.push(`Description: ${description}`);
+    output += `\nDescription: ${description}`;
   }
 
-  // ---------------------------------------------------------
+  // --------------------------------------------------
   // TASK DATA
-  // ---------------------------------------------------------
-
+  // --------------------------------------------------
   if (taskBlocks.length > 0) {
-    lines.push('');
-    lines.push('TASKS:');
+    output += `\n\nTASKS:`;
 
     taskBlocks.forEach((task, taskIndex) => {
-      lines.push(`Task ${taskIndex + 1}: ${task.name}`);
+      output += `\n\nTask ${taskIndex + 1}: ${task.name || 'Available Task'}`;
 
       if (task.recurring) {
-        lines.push(`Recurring: ${task.recurring}`);
+        output += `\nRecurring: ${task.recurring}`;
       }
 
-      if (
-        task.time !== undefined &&
-        task.time !== null &&
-        task.time !== ''
-      ) {
-        lines.push(`Time: ${task.time} minutes`);
+      if (task.time !== '' && task.time != null) {
+        output += `\nTime: ${task.time} minutes`;
       }
 
-      if (
-        task.cost !== undefined &&
-        task.cost !== null &&
-        task.cost !== ''
-      ) {
-        lines.push(`Cost: ${task.cost}`);
+      if (task.cost !== '' && task.cost != null) {
+        output += `\nCost: ${task.cost}`;
       }
 
       if (task.steps.length > 0) {
-        lines.push('Steps:');
+        output += `\nSteps:`;
 
         task.steps.forEach((step, stepIndex) => {
-          lines.push(`${stepIndex + 1}. ${step}`);
+          output += `\n${stepIndex + 1}. ${step}`;
         });
+      } else if (task.description) {
+        output += `\nInstructions: ${task.description}`;
       }
 
-      if (task.url) {
-        lines.push(`Task Link: ${task.url}`);
+      if (task.link) {
+        output += `\nTask Link: ${task.link}`;
       }
-
-      lines.push('');
     });
   }
 
-  // ---------------------------------------------------------
-  // DISCORD
-  // ---------------------------------------------------------
+  // --------------------------------------------------
+  // DISCORD DATA
+  // --------------------------------------------------
+  if (discordBlocks.length > 0) {
+    output += `\n\nDISCORD ROLES:`;
 
-  if (discordRoles.length > 0) {
-    lines.push('DISCORD ROLES:');
+    discordBlocks.forEach(role => {
+      output += `\n• ${role.name}`;
 
-    discordRoles.forEach(role => {
-      lines.push(
-        `• ${role.name} — ${role.requirement}`
-      );
+      if (role.requirement) {
+        output += ` — ${role.requirement}`;
+      }
     });
 
     if (discordLink) {
-      lines.push(`Discord Link: ${discordLink}`);
+      output += `\nDiscord Link: ${discordLink}`;
     }
-
-    lines.push('');
   }
 
-  // ---------------------------------------------------------
-  // RESEARCH DATA
-  // ---------------------------------------------------------
-
+  // --------------------------------------------------
+  // FUNDING
+  // --------------------------------------------------
   if (funding) {
-    lines.push(`Funding: ${funding}`);
+    output += `\n\nFunding: ${funding}`;
   }
 
   if (investors) {
-    lines.push(`Investors: ${investors}`);
+    output += `\nInvestors: ${investors}`;
   }
 
-  if (founders) {
-    lines.push(`Founders: ${founders}`);
-  }
-
-  if (tokenomics) {
-    lines.push(`Tokenomics: ${tokenomics}`);
-  }
-
-  return lines.join('\n');
-})
-.filter(Boolean)
-.join('\n\n━━━━━━━━━━━━━━━━━━\n\n');
+  return output;
+}).join('\n\n━━━━━━━━━━━━━━━━━━\n\n');
     const top5EarlyTelegramList = selectedList.slice(0, 5).map((item, idx) => {
       const name = item.name || item.project_name || 'Project';
       const link = item.x_link || item.link || 'https://airdropsailor.xyz';
