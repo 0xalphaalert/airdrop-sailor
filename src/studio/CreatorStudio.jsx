@@ -984,6 +984,7 @@ export default function CreatorStudio() {
     let taskTime = '5';
 let taskCost = '0';
 let tutorialMarkdown = '';
+    let xTaskGuide = '';
 
     // 1. Check if item has `ai_research_data` (From funding_opportunities table)
     let aiResearchData = parseField(data.ai_research_data);
@@ -1025,6 +1026,17 @@ let tutorialMarkdown = '';
         const url = postJson?.primary_url || t.link || t.external_link || data.x_link || '';
         if (!tutorialMarkdown && t.tutorial_markdown) {
   tutorialMarkdown = t.tutorial_markdown;
+}
+if (!xTaskGuide && t.tutorial_markdown) {
+  xTaskGuide = t.tutorial_markdown
+    .replace(/!\[[^\]]*\]\([^)]+\)/g, '')
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '$1: $2')
+    .replace(/#{1,6}\s*/g, '')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/>\s*/g, '')
+    .replace(/━━━━━━━━━━━━━━/g, '')
+    .trim();
 }
 
 if (taskCost === '0' && t.cost !== undefined && t.cost !== null) {
@@ -1188,6 +1200,7 @@ const realDescription =
 '{{task_cost}}': taskCost,
 '{{primary_task_link}}': taskPrimaryUrl,
 '{{tutorial_markdown}}': tutorialMarkdown,
+        '{{x_task_guide}}': xTaskGuide,
         '{{tasks_guide}}': tasksNumbered,
         '{{tasks_guide_telegram}}': tasksTelegram,
         '{{tasks_guide_plain}}': tasksNumbered,
