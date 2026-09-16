@@ -302,12 +302,7 @@ export default function CreatorStudio() {
           const n = parseFloat(s.replace(/[^0-9.]/g, ''));
           return isNaN(n) ? 0 : n * m;
         };
-        const formatEarlyFunding = (n) => {
-  if (n >= 1e9) return `$${(n / 1e9).toFixed(1).replace(/\.0$/, '')}B`;
-  if (n >= 1e6) return `$${(n / 1e6).toFixed(1).replace(/\.0$/, '')}M`;
-  if (n >= 1e3) return `$${Math.round(n / 1e3)}K`;
-  return n > 0 ? `$${n}` : '';
-};
+        
         
         const formatAmt = (n) => {
           if (n >= 1e9) return `$${(n/1e9).toFixed(1).replace(/\.0$/, '')}B`;
@@ -529,6 +524,12 @@ export default function CreatorStudio() {
       const n = parseFloat(s.replace(/[^0-9.]/g, ''));
       return isNaN(n) ? 0 : n * m;
     };
+    const formatEarlyFunding = (n) => {
+  if (n >= 1e9) return `$${(n / 1e9).toFixed(1).replace(/\.0$/, '')}B`;
+  if (n >= 1e6) return `$${(n / 1e6).toFixed(1).replace(/\.0$/, '')}M`;
+  if (n >= 1e3) return `$${Math.round(n / 1e3)}K`;
+  return n > 0 ? `$${n}` : '';
+};
 
     let totalNumeric = 0;
     let highestItem = null;
