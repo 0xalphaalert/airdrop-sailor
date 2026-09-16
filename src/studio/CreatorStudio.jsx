@@ -835,7 +835,7 @@ const top5EarlyXList = selectedList.slice(0, 5).map((item, idx) => {
   // --------------------------------------------------
   // BUILD FACTUAL SOURCE BLOCK
   // --------------------------------------------------
-  let output = `${idx + 1}/5 — ${name}`;
+  let output = `=== PROJECT ${idx + 1} ===\nName: ${name}`;
 
   if (tier) {
     output += `\nTier: ${tier}`;
@@ -938,6 +938,37 @@ const top5EarlyXList = selectedList.slice(0, 5).map((item, idx) => {
     }).join('\n');
 
     const top5EarlyBinanceList = top5EarlyXList; // Reuse the X thread format for Binance Square
+
+    // --- X-ONLY HOOK AGGREGATES (Top 5 Early Alpha twitter_prompt) ---
+let totalEarlyFunding = 0;
+selectedList.slice(0, 5).forEach(item => {
+  totalEarlyFunding += parseAmt(item.funding || item.funding_amount || '');
+});
+
+const formatEarlyFunding = (n) => {
+  if (n >= 1e9) return `$${(n / 1e9).toFixed(1).replace(/\.0$/, '')}B`;
+  if (n >= 1e6) return `$${(n / 1e6).toFixed(1).replace(/\.0$/, '')}M`;
+  if (n >= 1e3) return `$${Math.round(n / 1e3)}K`;
+  return n > 0 ? `$${n}` : '';
+};
+
+const earlyTotalFundingStr = formatEarlyFunding(totalEarlyFunding) || 'undisclosed';
+
+let airdropConfirmed = 0, airdropPossible = 0, airdropUnlikely = 0, airdropUnknown = 0;
+selectedList.slice(0, 5).forEach(item => {
+  const s = String(item.airdrop_status || '').toLowerCase();
+  if (s.includes('confirm')) airdropConfirmed++;
+  else if (s.includes('possible') || s.includes('potential')) airdropPossible++;
+  else if (s.includes('unlikely')) airdropUnlikely++;
+  else airdropUnknown++;
+});
+
+const airdropParts = [];
+if (airdropConfirmed) airdropParts.push(`${airdropConfirmed} confirmed`);
+if (airdropPossible)  airdropParts.push(`${airdropPossible} potential`);
+if (airdropUnlikely)  airdropParts.push(`${airdropUnlikely} unlikely`);
+if (airdropUnknown)   airdropParts.push(`${airdropUnknown} unrated`);
+const earlyAirdropSummary = airdropParts.length ? airdropParts.join(', ') : 'mixed';
 
     // --- TOP 10 TASKS THIS WEEK LIST BUILDERS (ADDITIVE) ---
     const top10TasksXList = selectedList.slice(0, 10).map((item) => {
@@ -1103,7 +1134,9 @@ const top5EarlyXList = selectedList.slice(0, 5).map((item, idx) => {
         .replaceAll('{{top_5_early_x_list}}', top5EarlyXList)
         .replaceAll('{{top_5_early_telegram_list}}', top5EarlyTelegramList)
         .replaceAll('{{top_5_early_farcaster_list}}', top5EarlyFarcasterList)
-        .replaceAll('{{top_5_early_binance_list}}', top5EarlyBinanceList);
+        .replaceAll('{{top_5_early_binance_list}}', top5EarlyBinanceList)
+.replaceAll('{{early_total_funding}}', earlyTotalFundingStr)
+.replaceAll('{{early_airdrop_summary}}', earlyAirdropSummary);
     };
 
     // --- DATA PARSING FOR SINGLE PROJECT / TASK PLACEHOLDERS ---
