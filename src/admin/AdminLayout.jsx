@@ -12,7 +12,10 @@ export default function AdminLayout() {
   const [pendingSwapCount, setPendingSwapCount] = useState(0);
 
   // 🚀 BOUNCER / ADMIN CHECK (Upgraded for Supabase)
-  const adminEmail = import.meta.env.VITE_ADMIN_EMAIL?.toLowerCase() || 'dkrout006@gmail.com'; 
+  const adminEmails = [
+  import.meta.env.VITE_ADMIN_EMAIL?.toLowerCase() || 'dkrout006@gmail.com',
+  'moon69703.cm@gmail.com'
+];
   const rawEmail = typeof user?.email === 'string' ? user.email : user?.email?.address;
   const currentUserEmail = rawEmail?.toLowerCase();
 
@@ -67,7 +70,7 @@ useEffect(() => {
   );
   
   // 🚀 The newly secured email check
-  if (ready && authenticated && currentUserEmail !== adminEmail) return (
+  if (ready && authenticated && !adminEmails.includes(currentUserEmail)) return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center text-white font-black uppercase tracking-widest text-red-500">
           Access Denied
       </div>
