@@ -619,31 +619,113 @@ export default function CreatorStudio() {
       return `${idx + 1}️⃣ ${name}\n\nFunding: ${funding}\n\nBacked by: ${investors}\n\nCurrent Phase:\n• ${status}\n\nGetting Started\n\n${steps.join('\n')}`;
     }).join('\n\n━━━━━━━━━━━━━━\n\n');
 
-    // --- TOP 5 TESTNET AIRDROPS LIST BUILDERS ---
-    const top5TestnetXList = selectedList.slice(0, 5).map((item) => {
-      const name = item.name || item.project_name;
-      const handleStr = item.x_link ? `@${item.x_link.split('/').pop()}` : name;
-      const investors = item.lead_investors || item.lead_investor || 'Tier 1 investors';
-      const funding = item.funding || item.funding_amount || 'TBA';
+    const top5TestnetXList = selectedList.slice(0, 5).map((item, idx) => {
+  const name = item.name || item.project_name || '';
+  const tier = item.tier || '';
+  const phase = item.status || item.current_phase || '';
+  const airdropStatus = item.airdrop_status || '';
+  const description = item.description || '';
+  const xLink = item.x_link || '';
+
+  let taskBlocks = [];
+  if (Array.isArray(item.tasks) && item.tasks.length > 0) {
+    item.tasks.forEach((task) => {
+      const postJson = parseField(task.post_json);
+      const taskName = task.name || postJson?.headline || '';
+      const recurring = task.recurring || '';
+      const cost = task.cost ?? '';
+      const time = task.time_minutes ?? '';
+      const taskLink = task.link || task.external_link || postJson?.primary_url || '';
 
       let steps = [];
-      if (item.tasks && Array.isArray(item.tasks) && item.tasks.length > 0) {
-        const t = item.tasks[0];
-        const postJson = parseField(t.post_json);
-        if (postJson?.steps && Array.isArray(postJson.steps)) {
-          steps = postJson.steps.slice(0, 3).map((s, i) => `${i + 1}. ${s.action || s.name}`);
-        } else if (t.tutorial_markdown) {
-          const matches = t.tutorial_markdown.match(/\d+\.\s+([^\n]+)/g);
-          if (matches) steps = matches.slice(0, 3).map((s, i) => `${i + 1}. ${s.replace(/^\d+\.\s+/, '')}`);
+      if (postJson?.steps && Array.isArray(postJson.steps) && postJson.steps.length > 0) {
+        steps = postJson.steps.map(step => {
+          if (typeof step === 'string') return step;
+          return step.action || step.name || step.description || '';
+        }).filter(Boolean);
+      }
+      if (steps.length === 0 && task.tutorial_markdown) {
+        const matches = String(task.tutorial_markdown).match(/(?:^|\n)\s*\d+\.\s+([^\n]+)/g);
+        if (matches) {
+          steps = matches.map(line => line.replace(/^\s*\d+\.\s+/, '').trim()).filter(Boolean);
         }
       }
-      if (steps.length === 0) {
-        steps = ['1. Connect Wallet & Claim Testnet Faucet', '2. Interact with Protocol & Perform Swaps', '3. Accumulate Points for Daily Check-in'];
+      const taskDescription = task.description || postJson?.description || '';
+      taskBlocks.push({ name: taskName, recurring, cost, time, link: taskLink, steps, description: taskDescription });
+    });
+  }
+
+  let discordBlocks = [];
+  if (Array.isArray(item.discord_roles) && item.discord_roles.length > 0) {
+    discordBlocks = item.discord_roles.map(role => ({
+      name: role.role_name || '',
+      requirement: role.requirements || role.perks || '',
+    })).filter(role => role.name);
+  }
+  const discordLink = item.discord_link || '';
+  const funding = item.funding || item.funding_amount || '';
+  const investors = item.lead_investors || item.lead_investor || '';
+
+  let output = `=== PROJECT ${idx + 1} ===\nName: ${name}`;
+  if (tier) output += `\nTier: ${tier}`;
+  if (phase) output += `\nCurrent Phase: ${phase}`;
+  if (airdropStatus) output += `\nAirdrop Status: ${airdropStatus}`;
+  if (xLink) output += `\nX: ${xLink}`;
+  if (description) output += `\nDescription: ${description}`;
+
+  if (taskBlocks.length > 0) {
+    output += `\n\nTASKS:`;
+    taskBlocks.forEach((task, taskIndex) => {
+      output += `\n\nTask ${taskIndex + 1}: ${task.name || 'Available Task'}`;
+      if (task.recurring) output += `\nRecurring: ${task.recurring}`;
+      if (task.time !== '' && task.time != null) output += `\nTime: ${task.time} minutes`;
+      if (task.cost !== '' && task.cost != null) output += `\nCost: ${task.cost}`;
+      if (task.steps.length > 0) {
+        output += `\nSteps:`;
+        task.steps.forEach((step, si) => { output += `\n${si + 1}. ${step}`; });
+      } else if (task.description) {
+        output += `\nInstructions: ${task.description}`;
       }
+      if (task.link) output += `\nTask Link: ${task.link}`;
+    });
+  }
 
-      return `🔹 ${name} Testnet\n\n${name} raised ${funding} from Tier 1 investors ${investors}\n\nGuide Below 👇\n\n${steps.join('\n')}`;
-    }).join('\n\n');
+  if (discordBlocks.length > 0) {
+    output += `\n\nDISCORD ROLES:`;
+    discordBlocks.forEach(role => {
+      output += `\n• ${role.name}`;
+      if (role.requirement) output += ` — ${role.requirement}`;
+    });
+    if (discordLink) output += `\nDiscord Link: ${discordLink}`;
+  }
 
+  if (funding) output += `\n\nFunding: ${funding}`;
+  if (investors) output += `\nInvestors: ${investors}`;
+
+  return output;
+}).join('\n\n━━━━━━━━━━━━━━━━━━\n\n');
+    // --- X-ONLY HOOK AGGREGATES (Top 5 Testnet twitter_prompt) ---
+let totalTestnetFunding = 0;
+selectedList.slice(0, 5).forEach(item => {
+  totalTestnetFunding += parseAmt(item.funding || item.funding_amount || '');
+});
+const testnetTotalFundingStr = formatEarlyFunding(totalTestnetFunding) || 'undisclosed';
+
+let testnetLiveCount = 0, testnetPointsCount = 0, testnetWaitlistCount = 0;
+selectedList.slice(0, 5).forEach(item => {
+  const s = String(item.status || '').toLowerCase();
+  if (s.includes('testnet')) testnetLiveCount++;
+  else if (s.includes('point')) testnetPointsCount++;
+  else if (s.includes('wait')) testnetWaitlistCount++;
+});
+
+const testnetPhaseParts = [];
+if (testnetLiveCount)   testnetPhaseParts.push(`${testnetLiveCount} live testnet${testnetLiveCount > 1 ? 's' : ''}`);
+if (testnetPointsCount) testnetPhaseParts.push(`${testnetPointsCount} points program${testnetPointsCount > 1 ? 's' : ''}`);
+if (testnetWaitlistCount) testnetPhaseParts.push(`${testnetWaitlistCount} waitlist`);
+const testnetPhaseSummary = testnetPhaseParts.length ? testnetPhaseParts.join(', ') : 'mixed phases';
+
+    
     const top5TestnetTelegramList = selectedList.slice(0, 5).map((item) => {
       const name = item.name || item.project_name;
       const status = item.status || 'Testnet Live';
@@ -1136,7 +1218,9 @@ const earlyAirdropSummary = airdropParts.length ? airdropParts.join(', ') : 'mix
         .replaceAll('{{top_5_early_farcaster_list}}', top5EarlyFarcasterList)
         .replaceAll('{{top_5_early_binance_list}}', top5EarlyBinanceList)
 .replaceAll('{{early_total_funding}}', earlyTotalFundingStr)
-.replaceAll('{{early_airdrop_summary}}', earlyAirdropSummary);
+.replaceAll('{{early_airdrop_summary}}', earlyAirdropSummary)
+.replaceAll('{{testnet_total_funding}}', testnetTotalFundingStr)
+.replaceAll('{{testnet_phase_summary}}', testnetPhaseSummary);
     };
 
     // --- DATA PARSING FOR SINGLE PROJECT / TASK PLACEHOLDERS ---
