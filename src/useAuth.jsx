@@ -3,6 +3,12 @@ import { supabase } from './supabaseClient';
 
 const AuthContext = createContext();
 
+// Admin accounts
+const ADMIN_EMAILS = [
+  import.meta.env.VITE_ADMIN_EMAIL?.toLowerCase() || 'dkrout006@gmail.com',
+  'moon69703.cm@gmail.com',
+];
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null); // 🎯 NEW: Stores the database profile
@@ -105,10 +111,15 @@ useEffect(() => {
   const closeModal = () => setIsModalOpen(false);
   const logout = async () => await supabase.auth.signOut();
 
-  // 🎯 NEW: Function to manually refresh profile state after completing wizard steps
+    // 🎯 NEW: Function to manually refresh profile state after completing wizard steps
   const refreshProfile = async () => {
     if (user) await fetchProfile(user.id);
   };
+
+  // Check whether the currently logged-in user is an admin
+  const isAdmin =
+    !!user?.email &&
+    ADMIN_EMAILS.includes(user.email.toLowerCase());
 
   return (
     <AuthContext.Provider value={{ 
@@ -120,7 +131,10 @@ useEffect(() => {
         wallet: { address: profile?.wallet_address || null } 
       } : null, 
       profile, // Expose the full profile data
-       
+
+      // Admin access
+      isAdmin,
+
       refreshProfile,
       login, 
       logout,
