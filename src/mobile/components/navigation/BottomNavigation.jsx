@@ -1,7 +1,7 @@
 // src/mobile/components/navigation/BottomNavigation.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '../../useAuth';
+import { useAuth } from '../../../useAuth';
 import { 
   Home,
   Activity,
