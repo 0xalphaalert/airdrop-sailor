@@ -3,23 +3,24 @@ import { NavLink, useLocation, Link } from 'react-router-dom';
 import { useAuth } from './useAuth';
 import { 
   Rocket,
-CircleDollarSign,
-Target,
-Crown,
-Gift,
-Trophy,
-ShieldAlert,
-LineChart,
-User,
-Settings,
-Award,
+  CircleDollarSign,
+  Target,
+  Crown,
+  Gift,
+  Trophy,
+  ShieldAlert,
+  LineChart,
+  User,
+  Settings,
+  Award,
   ChevronLeft,
   ChevronRight,
   Menu,
   X,
   Sparkles,
   Star,
-  Users
+  Users,
+  LockKeyhole
 } from 'lucide-react';
 
 // Group 1: Main (No section header)
@@ -50,7 +51,7 @@ const accountNavItems = [
   { to: '/profile', label: 'Profile', icon: User },
 ];
 export default function Sidebar() {
-  const { ready, authenticated, user, login } = useAuth();
+  const { ready, authenticated, user, login, isAdmin } = useAuth();
   const location = useLocation();
   
   // Sidebar collapse state
@@ -240,14 +241,22 @@ export default function Sidebar() {
           <div className="space-y-0.5">
             {rewardNavItems.map((item) => <NavItem key={item.to} {...item} />)}
           </div>
-          <SectionHeader title="Tools" />
-<div className="space-y-0.5">
-  {toolsNavItems.map((item) => (
-    <NavItem key={item.to} {...item} />
-  ))}
-</div>
+                    <SectionHeader title="Tools" />
+          <div className="space-y-0.5">
+            {toolsNavItems.map((item) => (
+              <NavItem key={item.to} {...item} />
+            ))}
 
-<SectionHeader title="Account" />
+            {isAdmin && (
+              <NavItem
+                to="/admin"
+                label="Admin"
+                icon={LockKeyhole}
+              />
+            )}
+          </div>
+
+          <SectionHeader title="Account" />
 <div className="space-y-0.5">
   {accountNavItems.map((item) => (
     <NavItem key={item.to} {...item} />
