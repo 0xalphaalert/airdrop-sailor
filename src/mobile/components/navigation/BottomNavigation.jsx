@@ -1,14 +1,28 @@
 // src/mobile/components/navigation/BottomNavigation.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../../useAuth';
 import { 
-  Home, Activity, Plus, LineChart, User, 
-  Zap, Crown, Shield, Store, X, Download, Users
+  Home,
+  Activity,
+  Plus,
+  LineChart,
+  User,
+  Zap,
+  Crown,
+  Shield,
+  Store,
+  X,
+  Download,
+  Users,
+  LockKeyhole
 } from 'lucide-react';
 
 export default function BottomNavigation() {
   const location = useLocation();
   const path = location.pathname;
+
+  const { isAdmin } = useAuth();
   
   // State for the + Button Menu
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -102,7 +116,21 @@ export default function BottomNavigation() {
           isMenuOpen ? 'scale-100 opacity-100 translate-y-0' : 'scale-95 opacity-0 translate-y-10 pointer-events-none'
         }`}
       >
-        <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2">
+
+          {isAdmin && (
+            <Link
+              to="/admin"
+              className="flex flex-col items-center justify-center gap-2 p-4 bg-slate-50 hover:bg-red-50 rounded-2xl transition-colors active:scale-95 text-slate-700 hover:text-red-600"
+            >
+              <div className="w-10 h-10 bg-red-100 text-red-600 rounded-full flex items-center justify-center">
+                <LockKeyhole size={20} />
+              </div>
+              <span className="text-[11px] font-black tracking-tight">
+                Admin
+              </span>
+            </Link>
+          )}
   
   <Link to="/xp-levels" className="flex flex-col items-center justify-center gap-2 p-4 bg-slate-50 hover:bg-blue-50 rounded-2xl transition-colors active:scale-95 text-slate-700 hover:text-blue-600">
     <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
