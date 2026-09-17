@@ -34,6 +34,16 @@ export default defineConfig({
         start_url: '/',
         scope: '/',
         display: 'standalone',
+        share_target: {
+  action: '/x-activities',
+  method: 'GET',
+  enctype: 'application/x-www-form-urlencoded',
+  params: {
+    title: 'title',
+    text: 'text',
+    url: 'url'
+  }
+},
 
         theme_color: '#1A45D1',
         background_color: '#ffffff',
