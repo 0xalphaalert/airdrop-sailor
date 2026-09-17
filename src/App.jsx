@@ -53,6 +53,7 @@ import TelegramIntel from './admin/TelegramIntel';
 import AdminDailyTasks from './admin/AdminDailyTasks';
 import ResearchDailyTasks from './admin/ResearchDailyTasks';
 import StudioDailyTasks from './admin/StudioDailyTasks';
+import XActivities from './pages/XActivities';
 
 // --- ALPHABRAIN STUDIO IMPORTS ---
 import AlphaBrainLayout from './studio/AlphaBrainLayout';
@@ -171,6 +172,7 @@ const AppLayout = () => {
           {/* --- PUBLIC ROUTES --- */}
           <Route path="/" element={<IndexRoute />} />
           <Route path="/sprints" element={<ShortTasksFeed />} />
+          <Route path="/x-activities" element={<XActivities />} />
           <Route path="/:id/airdropguide" element={<ProjectDetail />} />
           <Route path="/fundraising" element={<FundraisingPage />} />
           <Route path="/refer" element={<ReferEarnPage />} />
