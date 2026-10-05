@@ -1,0 +1,6 @@
+/* Add to index.css or App.css */
+@layer utilities {
+  .bg-glass {
+    @apply bg-white bg-opacity-60 backdrop-blur-lg;
+  }
+}
